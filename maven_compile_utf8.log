@@ -1,0 +1,57 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------------< com.example:notes >--------------------------
+[INFO] Building notes 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ notes ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ notes ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 13 source files with javac [debug parameters release 21] to target\classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /C:/Users/givem/OneDrive/Desktop/vaadin-example-project/src/main/java/com/example/notes/security/SecurityConfig.java:[4,39] cannot find symbol
+  symbol:   class VaadinWebSecurity
+  location: package com.vaadin.flow.spring.security
+[ERROR] /C:/Users/givem/OneDrive/Desktop/vaadin-example-project/src/main/java/com/example/notes/security/SecurityConfig.java:[15,37] cannot find symbol
+  symbol: class VaadinWebSecurity
+[ERROR] /C:/Users/givem/OneDrive/Desktop/vaadin-example-project/src/main/java/com/example/notes/security/SecurityConfig.java:[17,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/givem/OneDrive/Desktop/vaadin-example-project/src/main/java/com/example/notes/security/SecurityConfig.java:[22,9] cannot find symbol
+  symbol:   variable super
+  location: class com.example.notes.security.SecurityConfig
+[ERROR] /C:/Users/givem/OneDrive/Desktop/vaadin-example-project/src/main/java/com/example/notes/security/SecurityConfig.java:[23,9] cannot find symbol
+  symbol:   method setLoginView(org.springframework.security.config.annotation.web.builders.HttpSecurity,java.lang.Class<com.example.notes.views.LoginView>)
+  location: class com.example.notes.security.SecurityConfig
+[INFO] 5 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  9.436 s
+[INFO] Finished at: 2026-03-16T12:32:40+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile (default-compile) on project notes: Compilation failure: Compilation failure: 
+[ERROR] /C:/Users/givem/OneDrive/Desktop/vaadin-example-project/src/main/java/com/example/notes/security/SecurityConfig.java:[4,39] cannot find symbol
+[ERROR]   symbol:   class VaadinWebSecurity
+[ERROR]   location: package com.vaadin.flow.spring.security
+[ERROR] /C:/Users/givem/OneDrive/Desktop/vaadin-example-project/src/main/java/com/example/notes/security/SecurityConfig.java:[15,37] cannot find symbol
+[ERROR]   symbol: class VaadinWebSecurity
+[ERROR] /C:/Users/givem/OneDrive/Desktop/vaadin-example-project/src/main/java/com/example/notes/security/SecurityConfig.java:[17,5] method does not override or implement a method from a supertype
+[ERROR] /C:/Users/givem/OneDrive/Desktop/vaadin-example-project/src/main/java/com/example/notes/security/SecurityConfig.java:[22,9] cannot find symbol
+[ERROR]   symbol:   variable super
+[ERROR]   location: class com.example.notes.security.SecurityConfig
+[ERROR] /C:/Users/givem/OneDrive/Desktop/vaadin-example-project/src/main/java/com/example/notes/security/SecurityConfig.java:[23,9] cannot find symbol
+[ERROR]   symbol:   method setLoginView(org.springframework.security.config.annotation.web.builders.HttpSecurity,java.lang.Class<com.example.notes.views.LoginView>)
+[ERROR]   location: class com.example.notes.security.SecurityConfig
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

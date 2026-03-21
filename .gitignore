@@ -35,3 +35,8 @@ build/
 
 ### Data ###
 /data/
+
+### Vaadin Generated ###
+/src/main/frontend/generated/
+/frontend/generated/
+/src/main/bundles/

@@ -16,11 +16,11 @@ public class NoteService {
     }
 
     public List<Note> getNotes(User user) {
-        return noteRepository.findByUser(user);
+        return noteRepository.findByUserOrderByIdDesc(user);
     }
-
-    public void saveNote(Note note) {
-        noteRepository.save(note);
+    //clarify
+    public Note saveNote(Note note) {
+        return noteRepository.save(note);
     }
 
     public void deleteNote(Note note) {

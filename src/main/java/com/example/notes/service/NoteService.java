@@ -1,10 +1,12 @@
 package com.example.notes.service;
 
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import com.example.notes.data.entity.Note;
 import com.example.notes.data.entity.User;
 import com.example.notes.data.repository.NoteRepository;
-import org.springframework.stereotype.Service;
-import java.util.List;
 
 @Service
 public class NoteService {
@@ -16,7 +18,7 @@ public class NoteService {
     }
 
     public List<Note> getNotes(User user) {
-        return noteRepository.findByUser(user);
+        return noteRepository.findByUserOrderByIdDesc(user);
     }
 
     public void saveNote(Note note) {

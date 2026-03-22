@@ -1,0 +1,133 @@
+/* Gallery View Styling */
+.gallery-view {
+  box-sizing: border-box;
+}
+
+.gallery-title {
+  text-align: center;
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+/* Upload Card */
+.upload-card {
+  width: min(100%, 500px);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  background: var(--lumo-base-color);
+}
+
+.upload-preview {
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Gallery Grid */
+.gallery-grid {
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 1200px;
+  justify-content: center;
+}
+
+.gallery-card {
+  width: clamp(200px, 28vw, 320px);
+  min-height: 260px;
+  padding: 1rem;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  background: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-10pct);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.gallery-card:hover {
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.gallery-image {
+  height: 180px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.gallery-caption {
+  margin: 0;
+  overflow-wrap: break-word;
+  line-height: 1.4;
+  font-size: 0.9rem;
+  color: var(--lumo-body-text-color);
+}
+
+.gallery-footer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+}
+
+/* Responsive Styles */
+@media (max-width: 900px) {
+  .gallery-card {
+    width: clamp(180px, 45vw, 300px);
+  }
+
+  .upload-card {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .gallery-view {
+    padding: 1rem;
+  }
+
+  .gallery-grid {
+    gap: 1rem;
+  }
+
+  .gallery-card {
+    width: min(100%, 100%);
+    max-width: 400px;
+  }
+
+  .upload-card {
+    width: 100%;
+    padding: 1.5rem;
+  }
+
+  .upload-preview {
+    max-height: 250px;
+  }
+
+  .gallery-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .gallery-card {
+    width: 100%;
+    min-height: 240px;
+  }
+
+  .gallery-image {
+    height: 160px;
+  }
+
+  .upload-card {
+    padding: 1rem;
+  }
+
+  .gallery-title {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+}

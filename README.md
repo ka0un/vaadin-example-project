@@ -10,6 +10,7 @@ This guide will walk you through the absolute basics of getting this project up 
 3. [How to Open the Project](#how-to-open-the-project)
 4. [How to Run the Project](#how-to-run-the-project)
 5. [Detailed Project Structure](#detailed-project-structure)
+6. [Image Gallery Feature (Documentation)](GALLERY_FEATURE.md)
 
 ---
 

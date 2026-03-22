@@ -10,6 +10,8 @@ This guide will walk you through the absolute basics of getting this project up 
 3. [How to Open the Project](#how-to-open-the-project)
 4. [How to Run the Project](#how-to-run-the-project)
 5. [Detailed Project Structure](#detailed-project-structure)
+6. [Option A Implemented: Image Upload + Gallery](#option-a-implemented-image-upload--gallery)
+7. [Significant Implementation Steps (What was added)](#significant-implementation-steps-what-was-added)
 
 ---
 
@@ -135,6 +137,92 @@ vaadin-example-project/
 * **Vaadin:** A web framework that allows developers to write user interfaces (UI) entirely in Java. It handles the frontend automatically.
 * **Spring Security:** Provides authentication and authorization for the app.
 * **Spring Data JPA & H2 Database:** Used for saving and loading data. H2 is configured as a file-based database (stored in the `./data` folder), meaning your notes and data will persist (be saved) even if you restart the application.
+
+---
+
+## Option A Implemented: Image Upload + Gallery
+
+This project now includes **Option A**:
+
+- Users can upload images (`jpg`, `png`, `gif`, `webp`) using a drag-and-drop upload area.
+- Users can add an optional caption.
+- Uploaded content is saved and rendered in a **gallery card layout**.
+- Every card supports delete.
+
+### How to use
+1. Log in.
+2. On **My Notes**, type a caption (optional).
+3. Upload one image.
+4. Click **Save to Gallery**.
+5. The new card appears at the top of the gallery.
+
+---
+
+## Significant Implementation Steps (What was added)
+
+Below is the exact breakdown of major changes, in meaningful order.
+
+### Step 1: Extended the data model to store images
+File changed: `src/main/java/com/example/notes/data/entity/Note.java`
+
+Added new fields to `Note`:
+- `imageName` (original file name)
+- `imageMimeType` (content type, e.g. `image/png`)
+- `imageData` (`byte[]` blob stored with `@Lob`)
+
+Also added:
+- New constructor for image-based notes.
+- `hasImage()` helper method.
+
+Why this matters:
+- The app can now persist image content in the database together with caption and owner.
+
+### Step 2: Updated query behavior for gallery-first UX
+Files changed:
+- `src/main/java/com/example/notes/data/repository/NoteRepository.java`
+- `src/main/java/com/example/notes/service/NoteService.java`
+
+What changed:
+- Repository method now returns notes sorted by newest first (`findByUserOrderByIdDesc`).
+
+Why this matters:
+- Users immediately see their latest upload at the top of the gallery.
+
+### Step 3: Rebuilt the main UI for upload + preview
+File changed: `src/main/java/com/example/notes/views/NotesView.java`
+
+What was introduced:
+- `Upload` component with `MemoryBuffer`.
+- Accepted file type restrictions and max file size (5MB).
+- Real-time image preview before saving.
+- Validation: prevents empty save when no caption and no image are provided.
+- Notifications for success/failure cases.
+
+Why this matters:
+- Users get immediate visual feedback and a safer upload flow.
+
+### Step 4: Implemented a responsive gallery card layout
+File changed: `src/main/java/com/example/notes/views/NotesView.java`
+
+What changed:
+- Replaced simple list with a wrapped `FlexLayout` gallery.
+- Each note is rendered as a styled card:
+   - Image preview (if present)
+   - Caption
+   - Delete action
+- Added modern visual styling (rounded corners, spacing, shadows).
+
+Why this matters:
+- Images are displayed beautifully and remain readable across screen sizes.
+
+### Step 5: Preserved backward compatibility
+What was kept stable:
+- Existing authentication flow.
+- Existing note deletion behavior.
+- Existing database config (`ddl-auto=update`) so schema evolves automatically.
+
+Why this matters:
+- No migration script needed for this change in local development.
 
 ---
 

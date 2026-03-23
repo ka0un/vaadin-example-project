@@ -6,10 +6,8 @@ import com.example.notes.data.repository.UserRepository;
 import com.example.notes.service.GalleryService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
@@ -187,13 +185,36 @@ public class GalleryView extends VerticalLayout {
         fileName.getStyle().set("max-width", "200px");
 
         // Create a delete button with a trash icon
-        Button deleteBtn = new Button(VaadinIcon.TRASH.create(), e -> {
-            galleryService.deleteGalleryItem(item);
-            updateGallery(); // Refresh view
-            Notification.show("Removed from gallery.");
-        });
+        Button deleteBtn = new Button(VaadinIcon.TRASH.create());
         deleteBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
         deleteBtn.setTooltipText("Delete Image");
+
+        // Action: Confirmation dialog before deletion
+        deleteBtn.addClickListener(e -> {
+            Dialog confirmDialog = new Dialog();
+            confirmDialog.setHeaderTitle("Confirm Deletion");
+            
+            VerticalLayout dialogLayout = new VerticalLayout(
+                new Paragraph("Are you sure you want to permanently delete this image?")
+            );
+            dialogLayout.setPadding(false);
+            dialogLayout.setSpacing(false);
+            confirmDialog.add(dialogLayout);
+
+            Button deleteConfirm = new Button("Delete", VaadinIcon.TRASH.create(), click -> {
+                galleryService.deleteGalleryItem(item);
+                updateGallery();
+                Notification.show("Image removed from gallery.", 3000, Notification.Position.TOP_CENTER);
+                confirmDialog.close();
+            });
+            deleteConfirm.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+
+            Button cancelBtn = new Button("Cancel", click -> confirmDialog.close());
+            cancelBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
+            confirmDialog.getFooter().add(cancelBtn, deleteConfirm);
+            confirmDialog.open();
+        });
 
         card.add(image, fileName, deleteBtn);
         return card;

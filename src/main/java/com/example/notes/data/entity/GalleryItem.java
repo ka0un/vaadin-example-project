@@ -9,9 +9,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Column;
 import java.time.LocalDateTime;
 
-/**
- * Entity representing an uploaded image in the gallery.
- */
+// Entity representing an uploaded image in the gallery.
 @Entity
 public class GalleryItem {
 

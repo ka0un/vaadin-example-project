@@ -5,13 +5,11 @@ import com.example.notes.data.entity.User;
 import com.example.notes.data.repository.UserRepository;
 import com.example.notes.service.NoteService;
 import com.example.notes.views.components.NoteFormCard;
-import com.example.notes.views.components.NoteItemCard;
 import com.example.notes.views.components.NotesListCard;
-//import com.vaadin.flow.component.flexlayout.FlexLayout;
-import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.security.AuthenticationContext;
@@ -123,31 +121,27 @@ public class NotesView extends com.vaadin.flow.component.orderedlayout.VerticalL
                 ? formCard.getNoteField().getValue().trim()
                 : "";
 
-        if (content.isBlank()) {
-            showError("Note content cannot be empty.");
-            return;
+        boolean isEditing = editingNote != null;
+
+        try {
+            noteService.saveOrUpdateNote(
+                    editingNote,
+                    content,
+                    currentUser,
+                    uploadedImageData,
+                    uploadedImageName,
+                    uploadedImageType,
+                    removeExistingImage
+            );
+
+            showSuccess(isEditing ? "Note updated successfully." : "Note added successfully.");
+
+            resetForm();
+            updateNotesList();
+
+        } catch (IllegalArgumentException e) {
+            showError(e.getMessage());
         }
-
-        Note noteToSave = editingNote != null ? editingNote : new Note();
-        noteToSave.setContent(content);
-        noteToSave.setUser(currentUser);
-
-        if (uploadedImageData != null) {
-            noteToSave.setImageData(uploadedImageData);
-            noteToSave.setImageName(uploadedImageName);
-            noteToSave.setImageType(uploadedImageType);
-        } else if (removeExistingImage) {
-            noteToSave.setImageData(null);
-            noteToSave.setImageName(null);
-            noteToSave.setImageType(null);
-        }
-
-        noteService.saveNote(noteToSave);
-
-        showSuccess(editingNote != null ? "Note updated successfully." : "Note added successfully.");
-
-        resetForm();
-        updateNotesList();
     }
 
     private void updateNotesList() {

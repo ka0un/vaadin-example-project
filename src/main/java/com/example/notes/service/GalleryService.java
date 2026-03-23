@@ -31,13 +31,11 @@ public class GalleryService {
     }
 
     // Retrieve all gallery items for a specific user.
-    
     public List<GalleryItem> getGalleryItems(User user) {
         return galleryItemRepository.findByUserOrderByUploadTimeDesc(user);
     }
 
     // Save an uploaded image to disk and metadata to the database.
-
     public void saveGalleryItem(InputStream inputStream, String originalFileName, String contentType, User user) {
         try {
             String extension = "";
@@ -59,7 +57,6 @@ public class GalleryService {
     }
 
     // Delete a gallery item from both disk and database.
-    
     public void deleteGalleryItem(GalleryItem item) {
         try {
             Files.deleteIfExists(Paths.get(item.getFilePath()));

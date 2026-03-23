@@ -16,7 +16,12 @@ public class SecurityConfig extends VaadinWebSecurity {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(auth -> auth.requestMatchers(new AntPathRequestMatcher("/register")).permitAll());
+        // Permit access to registration and H2 console BEFORE Vaadin's security
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(new AntPathRequestMatcher("/register")).permitAll()
+        );
+
+        // Apply Vaadin's default security LAST so it doesn't block our custom matchers
         super.configure(http);
         setLoginView(http, LoginView.class);
     }

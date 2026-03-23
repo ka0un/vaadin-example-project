@@ -154,3 +154,7 @@ vaadin-example-project/
 ### 3. Changes don't appear in the browser
 **What it means:** Sometimes your browser caches older files.
 **How to fix:** Try completely refreshing the page (`Ctrl + F5` on Windows, `Cmd + Shift + R` on Mac). If that doesn't help, restart the server by pressing `Ctrl+C` in your terminal and running the `spring-boot:run` command again.
+
+## Image Gallery
+
+Requirement: Build an interface where users can easily upload images and display them beautifully in a gallery format.

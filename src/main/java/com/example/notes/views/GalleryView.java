@@ -15,7 +15,7 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
+import com.vaadin.flow.component.upload.receivers.MultiFileMemoryBuffer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
@@ -67,7 +67,7 @@ public class GalleryView extends VerticalLayout {
     }
 
     private void configureUpload() {
-        MemoryBuffer buffer = new MemoryBuffer();
+        MultiFileMemoryBuffer buffer = new MultiFileMemoryBuffer();
         Upload upload = new Upload(buffer);
         upload.setAcceptedFileTypes("image/jpeg", "image/png", "image/gif");
         upload.setMaxFileSize(10 * 1024 * 1024); // 10MB limit
@@ -77,9 +77,12 @@ public class GalleryView extends VerticalLayout {
         label.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
 
         upload.addSucceededListener(event -> {
-            galleryService.saveGalleryItem(buffer.getInputStream(), event.getFileName(), event.getMIMEType(), currentUser);
-            Notification.show("Image '" + event.getFileName() + "' uploaded successfully!", 3000, Notification.Position.TOP_CENTER);
+            String fileName = event.getFileName();
+            galleryService.saveGalleryItem(buffer.getInputStream(fileName), fileName, event.getMIMEType(), currentUser);
+            Notification.show("Image '" + fileName + "' uploaded successfully!", 3000, Notification.Position.TOP_CENTER);
             updateGallery();
+            // Clear the file list so the upload button remains enabled for the next file
+            upload.getElement().executeJs("this.files = []");
         });
 
         upload.addFileRejectedListener(event -> {

@@ -5,10 +5,13 @@ import com.example.notes.data.entity.User;
 import com.example.notes.data.repository.ImageRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.imageio.ImageIO;
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -59,6 +62,15 @@ public class ImageService {
         image.setUser(user);
 
         imageRepository.save(image);
+    }
+
+    @Transactional
+    public void deleteImage(Image img, User user) throws IOException {
+        System.out.println("Deleting image " + img.getFilePath());
+        imageRepository.deleteByFileNameAndUser(img.getFileName(), user);
+        System.out.println("reached");
+        Path path = Paths.get(uploadDir).resolve(img.getFileName());
+        Files.deleteIfExists(path);
     }
 
     public List<Image> getAllImagesByUser(User user) {

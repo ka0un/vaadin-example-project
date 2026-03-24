@@ -9,9 +9,11 @@ import com.example.notes.service.NoteService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -24,6 +26,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.annotation.security.PermitAll;
 
+import java.io.IOException;
 import java.util.List;
 
 @Route(value = "gallery", layout = MainLayout.class)
@@ -84,6 +87,7 @@ public class GalleryView extends VerticalLayout {
         Button uploadButton = new Button("Upload Image");
         upload.setUploadButton(uploadButton);
 
+        upload.setHeight("200px");
         return upload;
     }
 
@@ -111,37 +115,64 @@ public class GalleryView extends VerticalLayout {
         }
     }
 
-    // 🔹 Card UI
     private Component createImageCard(Image img) {
 
-        VerticalLayout card = new VerticalLayout();
-        card.setPadding(true);
-        card.setSpacing(false);
-        card.setAlignItems(Alignment.CENTER);
+        Div card = new Div();
         card.setWidthFull();
-
-        card.setHeight("300px");
+        card.setHeight("200px");
 
         card.getStyle()
-                .set("border", "1px solid #ddd")
+                .set("overflow", "hidden")
                 .set("border-radius", "12px")
-                .set("box-shadow", "0 2px 6px rgba(0,0,0,0.1)")
-                .set("overflow", "hidden");
+                .set("cursor", "pointer");
 
         // Image
         com.vaadin.flow.component.html.Image image =
-                new com.vaadin.flow.component.html.Image("/"+
-                        img.getFileName(), // served from uploads
+                new com.vaadin.flow.component.html.Image(
+                        "/" + img.getFileName(),
                         img.getFileName()
                 );
 
-//        System.out.println("testing image: "+image.getSrc());
-        image.setMaxWidth("250px");
-        image.setMaxHeight("150px");
+        image.setWidthFull();
+        image.setHeightFull();
+
         image.getStyle()
-                .set("object-fit", "contain")
-                .set("border-radius", "8px")
-                .set("overflow", "hidden");
+                .set("object-fit", "cover")
+                .set("transition", "transform 0.3s ease"); // smooth animation
+
+        // 🔥 Hover effect (zoom)
+        card.getElement().addEventListener("mouseover",
+                e -> image.getStyle().set("transform", "scale(1.08)"));
+
+        card.getElement().addEventListener("mouseout",
+                e -> image.getStyle().set("transform", "scale(1)"));
+
+        // 🔥 Click → open dialog
+        card.addClickListener(e -> openImageDialog(img));
+
+        card.add(image);
+
+        return card;
+    }
+
+    private void openImageDialog(Image img) {
+
+        Dialog dialog = new Dialog();
+        dialog.setWidth("600px");
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.setAlignItems(Alignment.CENTER);
+
+        // Image (bigger preview)
+        com.vaadin.flow.component.html.Image fullImage =
+                new com.vaadin.flow.component.html.Image(
+                        "/" + img.getFileName(),
+                        img.getFileName()
+                );
+
+        fullImage.setMaxWidth("100%");
+        fullImage.setMaxHeight("400px");
+        fullImage.getStyle().set("object-fit", "contain");
 
         // Metadata
         Span name = new Span("Name: " + img.getFileName());
@@ -153,9 +184,30 @@ public class GalleryView extends VerticalLayout {
         meta.setSpacing(false);
         meta.setPadding(false);
 
-        card.add(image, meta);
+        // Buttons
+        Button cropBtn = new Button("Crop");
+        Button deleteBtn = new Button("Delete");
 
-        return card;
+        deleteBtn.getStyle().set("color", "red");
+
+        // 🔥 Delete logic
+        deleteBtn.addClickListener(e -> {
+            try {
+                imageService.deleteImage(img,currentUser);
+            } catch (IOException ex) {
+                Notification.show("The image does not exist.");
+                return;
+            }
+            dialog.close();
+            refreshGallery();
+        });
+
+        HorizontalLayout actions = new HorizontalLayout(cropBtn, deleteBtn);
+
+        layout.add(fullImage, meta, actions);
+        dialog.add(layout);
+
+        dialog.open();
     }
 
     // 🔹 Helper: format file size

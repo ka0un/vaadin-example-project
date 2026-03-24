@@ -1,4 +1,53 @@
 # Notes Application (Vaadin & Spring Boot Project)
+## Implemented Feature: Image Upload & Note Editing
+
+This implementation extends the Notes Application by adding support for image handling and improved user experience.
+
+###  Features Added
+
+- Create notes with optional image upload
+- Preview image before saving
+- Display images inside saved notes
+- Click image to view a larger preview
+- Edit notes with:
+  - image replacement
+  - image removal
+- Delete notes with confirmation dialog
+- Improved responsive layout using reusable UI components
+
+---
+
+###  How to Use the Feature
+
+1. Open the application and log in
+2. Enter note content in the form
+3. (Optional) Upload an image
+4. Click **Add Note**
+5. View saved notes in the "Saved Notes" section
+6. Click on an image to preview it in a larger view
+7. Click **Edit** to modify a note
+   - Update text
+   - Upload a new image to replace existing one
+   - Remove image if needed
+8. Click **Update Note** to save changes
+9. Click **Delete** to remove a note (confirmation required)
+
+---
+
+### Technical Implementation
+
+- Images stored in database using `byte[]` with `@Lob`
+- UI refactored into reusable components:
+  - `NoteFormCard`
+  - `NotesListCard`
+  - `NoteItemCard`
+- Used `FlexLayout` for responsive design
+- Upload handled using Vaadin `Upload` + `MemoryBuffer`
+- Added validation for empty notes and file restrictions
+
+---
+
+
 
 Welcome to the **Notes Application**! This is a web application built using **Java**, **Spring Boot**, and **Vaadin**. 
 

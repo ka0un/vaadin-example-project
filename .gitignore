@@ -40,3 +40,5 @@ build/
 /src/main/frontend/generated/
 /frontend/generated/
 /src/main/bundles/
+
+uploads/

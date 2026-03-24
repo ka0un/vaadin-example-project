@@ -166,55 +166,60 @@ public class ImageView extends VerticalLayout {
         imageGrid.removeAll();
 
         List<Image> images = imageService.getUserImages(user);
-
         boolean hasImages = !images.isEmpty();
         emptyStateCard.setVisible(!hasImages);
         imageGrid.setVisible(hasImages);
 
-        if (!hasImages) {
-            return;
-        }
+        if (!hasImages) return;
 
         for (Image img : images) {
-            StreamResource resource = new StreamResource(
-                    img.getFileName(),
-                    () -> {
-                        try {
-                            return new FileInputStream(img.getFilePath());
-                        } catch (Exception e) {
-                            return InputStream.nullInputStream();
-                        }
-                    }
-            );
-
-            com.vaadin.flow.component.html.Image image =
-                    new com.vaadin.flow.component.html.Image(resource, "uploaded");
-                    image.setWidthFull();
-                    image.setHeight("190px");
-            image.getStyle()
-                        .set("object-fit", "cover")
-                        .set("border-radius", "14px");
-
-                    Span name = new Span(formatDisplayName(img.getFileName()));
-                    name.getStyle()
-                        .set("font-size", "0.9rem")
-                        .set("font-weight", "600")
-                        .set("color", "#1f2937")
-                        .set("word-break", "break-word");
-
-                    VerticalLayout imageCard = new VerticalLayout(image, name);
-                    imageCard.setPadding(true);
-                    imageCard.setSpacing(true);
-                    imageCard.setWidth("220px");
-                    imageCard.getStyle()
-                        .set("background", "rgba(255,255,255,0.9)")
-                        .set("border", "1px solid #dde4ef")
-                        .set("border-radius", "18px")
-                        .set("box-shadow", "0 6px 16px rgba(9, 30, 66, 0.06)");
-
-                    imageGrid.add(imageCard);
-        }
+            // 1. Create the Resource to load the image from disk
+            StreamResource resource = new StreamResource(img.getFileName(), () -> {
+                try {
+                    return new FileInputStream(img.getFilePath());
+                } catch (Exception e) {
+                    return InputStream.nullInputStream();
                 }
+            });
+
+            // 2. Setup the Image Component with styling for a nice card look
+            com.vaadin.flow.component.html.Image image = new com.vaadin.flow.component.html.Image(resource, "uploaded");
+            image.setWidthFull();
+            image.setHeight("190px");
+            image.getStyle().set("object-fit", "cover").set("border-radius", "14px");
+
+            Span name = new Span(formatDisplayName(img.getFileName()));
+            name.getStyle().set("font-size", "0.9rem").set("font-weight", "600")
+                         .set("color", "#1f2937").set("word-break", "break-word");
+
+            // --- START NEW DELETE BUTTON LOGIC ---
+            Button deleteBtn = new Button(new Icon(VaadinIcon.TRASH), e -> {
+                imageService.deleteImage(img); // Tell the service to remove file + DB record
+                refreshGallery(user);          // Reload the grid immediately
+                Notification.show("Image deleted successfully", 2000, Notification.Position.TOP_CENTER);
+            });
+
+            // Styling the button
+            deleteBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
+            deleteBtn.setTooltipText("Delete Image");
+            deleteBtn.getStyle().set("margin-left", "auto"); // Aligns it to the right
+            // --- END NEW DELETE BUTTON LOGIC ---
+
+            // 3. Assemble the Card
+            // We add the deleteBtn to the Layout
+            VerticalLayout imageCard = new VerticalLayout(image, name, deleteBtn); 
+            imageCard.setPadding(true);
+            imageCard.setSpacing(true);
+            imageCard.setWidth("220px");
+            imageCard.getStyle()
+                    .set("background", "rgba(255,255,255,0.9)")
+                    .set("border", "1px solid #dde4ef")
+                    .set("border-radius", "18px")
+                    .set("box-shadow", "0 6px 16px rgba(9, 30, 66, 0.06)");
+
+            imageGrid.add(imageCard);
+        }
+    }
 
                 private String formatDisplayName(String fileName) {
                 int separator = fileName.indexOf('_');

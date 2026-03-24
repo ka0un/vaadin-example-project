@@ -58,9 +58,30 @@ public class ImageService {
         image.setUser(user);
 
         return imageRepository.save(image);
+
+        
+
+        
     }
+
+    
 
     public List<Image> getUserImages(User user) {
         return imageRepository.findByUserOrderByIdDesc(user);
     }
+
+    public void deleteImage(Image image) {
+    // 1. Find the real file/drawing from the toy box/database and throw it away
+    File file = new File(image.getFilePath());
+    
+    // Check if the file is actually there before trying to delete
+    if (file.exists()) {
+        boolean deleted = file.delete(); 
+        if (deleted) {
+            System.out.println("File physically removed from uploads/images");
+        }
+    }
+    // 2. Tell the notebook to forget about it
+    imageRepository.delete(image);
+}
 }

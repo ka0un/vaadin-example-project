@@ -10,5 +10,5 @@ import java.util.List;
 @Repository
 public interface ImageRepository extends JpaRepository<Image, Long> {
     List<Image> findByUser(User user);
-    void deleteByFileNameAndUser(String fileName, User user);
+    void deleteByIdAndUser(Integer id, User user);
 }

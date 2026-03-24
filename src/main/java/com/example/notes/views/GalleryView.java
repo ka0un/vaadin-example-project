@@ -37,7 +37,7 @@ public class GalleryView extends VerticalLayout {
     private final ImageService imageService;
     private final User currentUser;
 
-    private Div galleryContainer = new Div();
+    private final Div galleryContainer = new Div();
 
     public GalleryView(ImageService imageService,
                        UserRepository userRepository,
@@ -55,7 +55,6 @@ public class GalleryView extends VerticalLayout {
         setSizeFull();
         setPadding(true);
         setSpacing(true);
-
         add(createGallerySection());
 
         refreshGallery();
@@ -129,7 +128,7 @@ public class GalleryView extends VerticalLayout {
         // Image
         com.vaadin.flow.component.html.Image image =
                 new com.vaadin.flow.component.html.Image(
-                        "/" + img.getFileName(),
+                        "/" + img.getId(),
                         img.getFileName()
                 );
 
@@ -137,7 +136,7 @@ public class GalleryView extends VerticalLayout {
         image.setHeightFull();
 
         image.getStyle()
-                .set("object-fit", "cover")
+                .set("object-fit", "contain")
                 .set("transition", "transform 0.3s ease"); // smooth animation
 
         // 🔥 Hover effect (zoom)
@@ -166,7 +165,7 @@ public class GalleryView extends VerticalLayout {
         // Image (bigger preview)
         com.vaadin.flow.component.html.Image fullImage =
                 new com.vaadin.flow.component.html.Image(
-                        "/" + img.getFileName(),
+                        "/" + img.getId(),
                         img.getFileName()
                 );
 
@@ -193,7 +192,7 @@ public class GalleryView extends VerticalLayout {
         // 🔥 Delete logic
         deleteBtn.addClickListener(e -> {
             try {
-                imageService.deleteImage(img,currentUser);
+                imageService.deleteImage(img.getId(),currentUser);
             } catch (IOException ex) {
                 Notification.show("The image does not exist.");
                 return;

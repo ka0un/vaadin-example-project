@@ -15,6 +15,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 
 @Service
 public class ImageService {
@@ -41,16 +43,20 @@ public class ImageService {
         // Extract format
         String format = fileName.substring(fileName.lastIndexOf('.') + 1);
 
+        Random random = new Random();
+        int id = random.nextInt(1000000);
+
         // Save file
         File directory = new File(uploadDir);
         if (!directory.exists()) {
             directory.mkdirs();
         }
-        File targetFile = new File(uploadDir + fileName);
+        File targetFile = new File(uploadDir + id);
         Files.write(targetFile.toPath(), imageBytes);
 
         // Save to DB
         Image image = new Image();
+        image.setId(id);
         image.setFileName(fileName);
         image.setFilePath(targetFile.getAbsolutePath());
         image.setFileSize(fileSize);
@@ -65,11 +71,9 @@ public class ImageService {
     }
 
     @Transactional
-    public void deleteImage(Image img, User user) throws IOException {
-        System.out.println("Deleting image " + img.getFilePath());
-        imageRepository.deleteByFileNameAndUser(img.getFileName(), user);
-        System.out.println("reached");
-        Path path = Paths.get(uploadDir).resolve(img.getFileName());
+    public void deleteImage(Integer id, User user) throws IOException {
+        imageRepository.deleteByIdAndUser(id, user);
+        Path path = Paths.get(uploadDir).resolve(String.valueOf(id));
         Files.deleteIfExists(path);
     }
 

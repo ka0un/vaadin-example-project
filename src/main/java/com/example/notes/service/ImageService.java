@@ -61,10 +61,6 @@ public class ImageService {
         imageRepository.save(image);
     }
 
-    public List<Image> getAllImages() {
-        return imageRepository.findAll();
-    }
-
     public List<Image> getAllImagesByUser(User user) {
         return imageRepository.findByUser(user);
     }

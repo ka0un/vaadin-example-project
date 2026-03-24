@@ -17,7 +17,7 @@ public class MainLayout extends AppLayout {
     public MainLayout(AuthenticationContext authContext) {
         this.authContext = authContext;
         createHeader();
-        createDrawer();
+        createDrawers();
     }
 
     private void createHeader() {
@@ -35,7 +35,8 @@ public class MainLayout extends AppLayout {
         addToNavbar(header);
     }
 
-    private void createDrawer() {
-        addToDrawer(new RouterLink("My Notes", NotesView.class));
+    private void createDrawers() {
+
+        addToDrawer(new RouterLink("My Notes", NotesView.class),new RouterLink("My Gallery", GalleryView.class));
     }
 }

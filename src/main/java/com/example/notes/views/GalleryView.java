@@ -53,7 +53,7 @@ public class GalleryView extends VerticalLayout {
         setPadding(true);
         setSpacing(true);
 
-        add(createUploadSection(), createGallerySection());
+        add(createGallerySection());
 
         refreshGallery();
     }
@@ -105,6 +105,7 @@ public class GalleryView extends VerticalLayout {
 
         List<Image> images = imageService.getAllImagesByUser(currentUser);
 
+        galleryContainer.add(createUploadSection());
         for (Image img : images) {
             galleryContainer.add(createImageCard(img));
         }
@@ -116,12 +117,16 @@ public class GalleryView extends VerticalLayout {
         VerticalLayout card = new VerticalLayout();
         card.setPadding(true);
         card.setSpacing(false);
+        card.setAlignItems(Alignment.CENTER);
         card.setWidthFull();
+
+        card.setHeight("300px");
 
         card.getStyle()
                 .set("border", "1px solid #ddd")
                 .set("border-radius", "12px")
-                .set("box-shadow", "0 2px 6px rgba(0,0,0,0.1)");
+                .set("box-shadow", "0 2px 6px rgba(0,0,0,0.1)")
+                .set("overflow", "hidden");
 
         // Image
         com.vaadin.flow.component.html.Image image =
@@ -131,8 +136,12 @@ public class GalleryView extends VerticalLayout {
                 );
 
 //        System.out.println("testing image: "+image.getSrc());
-        image.setWidthFull();
-        image.getStyle().set("border-radius", "8px");
+        image.setMaxWidth("250px");
+        image.setMaxHeight("150px");
+        image.getStyle()
+                .set("object-fit", "contain")
+                .set("border-radius", "8px")
+                .set("overflow", "hidden");
 
         // Metadata
         Span name = new Span("Name: " + img.getFileName());

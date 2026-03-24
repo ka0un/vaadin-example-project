@@ -6,6 +6,7 @@ import com.example.notes.data.entity.User;
 import com.example.notes.data.repository.UserRepository;
 import com.example.notes.service.ImageService;
 import com.example.notes.service.NoteService;
+import com.flowingcode.vaadin.addons.imagecrop.ImageCrop;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -136,7 +137,7 @@ public class GalleryView extends VerticalLayout {
         image.setHeightFull();
 
         image.getStyle()
-                .set("object-fit", "contain")
+                .set("object-fit", "cover")
                 .set("transition", "transform 0.3s ease"); // smooth animation
 
         // 🔥 Hover effect (zoom)

@@ -1,3 +1,9 @@
+
+
+.DS_Store
+
+*.txt
+
 node_modules
 HELP.md
 target/

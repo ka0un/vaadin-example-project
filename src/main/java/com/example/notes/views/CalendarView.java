@@ -77,7 +77,7 @@ public class CalendarView extends VerticalLayout {
         renderDayPanel(selectedDate);
     }
 
-    // ── Top bar: month navigation ──────────────────────────────────────────
+    // Top bar: month navigation
 
     private HorizontalLayout buildTopBar() {
         Button prevBtn = new Button(VaadinIcon.ANGLE_LEFT.create(), e -> {
@@ -112,7 +112,7 @@ public class CalendarView extends VerticalLayout {
         return bar;
     }
 
-    // ── Main area: calendar grid + day sidebar ─────────────────────────────
+    // Main area: calendar grid, day sidebar
 
     private HorizontalLayout buildMainArea() {
         // Calendar grid
@@ -139,7 +139,7 @@ public class CalendarView extends VerticalLayout {
         return main;
     }
 
-    // ── Calendar grid renderer ─────────────────────────────────────────────
+    //Calendar grid renderer
 
     private void renderCalendar() {
         monthLabel.setText(currentMonth.getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH)
@@ -163,10 +163,10 @@ public class CalendarView extends VerticalLayout {
             calendarGrid.add(header);
         }
 
-        // First day offset (week starts Monday)
-        int startDow = currentMonth.getDayOfWeek().getValue(); // 1=Mon .. 7=Sun
+        // First day offset
+        int startDow = currentMonth.getDayOfWeek().getValue();
         for (int i = 1; i < startDow; i++) {
-            calendarGrid.add(new Div()); // empty cell
+            calendarGrid.add(new Div());
         }
 
         // Day cells
@@ -180,7 +180,7 @@ public class CalendarView extends VerticalLayout {
             Div cell = buildDayCell(date, dayEvents, today);
             cell.addClickListener(e -> {
                 selectedDate = date;
-                renderCalendar();          // re-render to update selection highlight
+                renderCalendar();
                 renderDayPanel(date);
             });
             calendarGrid.add(cell);
@@ -265,7 +265,7 @@ public class CalendarView extends VerticalLayout {
         return pill;
     }
 
-    // ── Day panel (sidebar) ────────────────────────────────────────────────
+    // Day panel (sidebar)
 
     private void renderDayPanel(LocalDate date) {
         eventsSidebar.removeAll();
@@ -342,7 +342,7 @@ public class CalendarView extends VerticalLayout {
         return card;
     }
 
-    // ── Add/Edit Event dialog ──────────────────────────────────────────────
+    // Add/Edit Event dialog
 
     private void openEventDialog(LocalDate defaultDate) {
         Dialog dialog = new Dialog();

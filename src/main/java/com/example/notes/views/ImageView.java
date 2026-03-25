@@ -13,7 +13,8 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.orderedlayout.FlexLayout;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.upload.FileRejectedEvent;
 import com.vaadin.flow.component.upload.Upload;
@@ -38,7 +39,7 @@ public class ImageView extends VerticalLayout {
 
     private final VerticalLayout galleryLayout = new VerticalLayout();
     private final VerticalLayout emptyStateCard = new VerticalLayout();
-    private final FlexLayout imageGrid = new FlexLayout();
+    private final VerticalLayout imageGrid = new VerticalLayout();
 
     public ImageView(ImageService imageService, CurrentUserService userService) {
         this.imageService = imageService;
@@ -49,17 +50,20 @@ public class ImageView extends VerticalLayout {
         setSizeFull();
         setPadding(false);
         setSpacing(false);
-        getStyle()
-            .set("background", "transparent")
-                .set("padding", "2rem")
-                .set("box-sizing", "border-box");
+        getStyle().set("background", "transparent");
 
+        HorizontalLayout mainLayout = new HorizontalLayout();
+        mainLayout.setSizeFull();
+        mainLayout.setPadding(false);
+        mainLayout.setSpacing(false);
+
+        VerticalLayout sidebar = createSidebar();
         VerticalLayout shell = new VerticalLayout();
         shell.setWidthFull();
-        shell.setMaxWidth("1000px");
+        shell.setFlexGrow(1);
         shell.setSpacing(true);
-        shell.setPadding(false);
-        shell.getStyle().set("margin", "0 auto");
+        shell.setPadding(true);
+        shell.getStyle().set("padding", "2rem");
 
         // Use MultiFileMemoryBuffer to allow batch uploads for better UX
         MultiFileMemoryBuffer buffer = new MultiFileMemoryBuffer();
@@ -89,7 +93,8 @@ public class ImageView extends VerticalLayout {
         });
 
         shell.add(createHeader(), createUploadPanel(upload), createGallerySection());
-        add(shell);
+        mainLayout.add(sidebar, shell);
+        add(mainLayout);
 
         refreshGallery(currentUser);
     }
@@ -151,8 +156,12 @@ public class ImageView extends VerticalLayout {
                 .set("padding", "2rem");
 
         imageGrid.setWidthFull();
-        imageGrid.setFlexWrap(FlexLayout.FlexWrap.WRAP);
-        imageGrid.getStyle().set("gap", "1rem");
+        imageGrid.setPadding(false);
+        imageGrid.setSpacing(false);
+        imageGrid.getStyle()
+                .set("display", "grid")
+                .set("grid-template-columns", "repeat(auto-fill, minmax(180px, 1fr))")
+                .set("gap", "1.2rem");
 
         galleryLayout.add(emptyStateCard, imageGrid);
         return galleryLayout;
@@ -173,7 +182,6 @@ public class ImageView extends VerticalLayout {
         if (!hasImages) return;
 
         for (Image img : images) {
-            // 1. Create the Resource to load the image from disk
             StreamResource resource = new StreamResource(img.getFileName(), () -> {
                 try {
                     return new FileInputStream(img.getFilePath());
@@ -182,35 +190,46 @@ public class ImageView extends VerticalLayout {
                 }
             });
 
-            // 2. Setup the Image Component with styling for a nice card look
             com.vaadin.flow.component.html.Image image = new com.vaadin.flow.component.html.Image(resource, "uploaded");
-            image.setWidthFull();
-            image.setHeight("190px");
+            image.setWidth("100%");
+            image.setHeight("160px");
             image.getStyle().set("object-fit", "cover").set("border-radius", "14px");
 
-            Span name = new Span(formatDisplayName(img.getFileName()));
-            name.getStyle().set("font-size", "0.9rem").set("font-weight", "600")
-                         .set("color", "#1f2937").set("word-break", "break-word");
+            VerticalLayout imageCardContent = new VerticalLayout(image);
+            imageCardContent.setPadding(false);
+            imageCardContent.setSpacing(false);
+            imageCardContent.setWidthFull();
+            imageCardContent.getStyle().set("position", "relative");
 
-            // --- START NEW DELETE BUTTON LOGIC ---
-            Button deleteBtn = new Button(new Icon(VaadinIcon.TRASH), e -> {
-                imageService.deleteImage(img); // Tell the service to remove file + DB record
-                refreshGallery(user);          // Reload the grid immediately
+            Button deleteBtn = new Button(new Icon(VaadinIcon.TRASH));
+            deleteBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
+            deleteBtn.setTooltipText("Delete Image");
+            deleteBtn.getStyle()
+                    .set("position", "absolute")
+                    .set("top", "8px")
+                    .set("right", "8px")
+                    .set("background", "rgba(255, 255, 255, 0.9)")
+                    .set("border-radius", "50%")
+                    .set("width", "36px")
+                    .set("height", "36px")
+                    .set("padding", "0")
+                    .set("display", "flex")
+                    .set("align-items", "center")
+                    .set("justify-content", "center")
+                    .set("cursor", "pointer");
+
+            deleteBtn.addClickListener(e -> {
+                imageService.deleteImage(img);
+                refreshGallery(user);
                 Notification.show("Image deleted successfully", 2000, Notification.Position.TOP_CENTER);
             });
 
-            // Styling the button
-            deleteBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
-            deleteBtn.setTooltipText("Delete Image");
-            deleteBtn.getStyle().set("margin-left", "auto"); // Aligns it to the right
-            // --- END NEW DELETE BUTTON LOGIC ---
+            imageCardContent.add(deleteBtn);
 
-            // 3. Assemble the Card
-            // We add the deleteBtn to the Layout
-            VerticalLayout imageCard = new VerticalLayout(image, name, deleteBtn); 
+            VerticalLayout imageCard = new VerticalLayout(imageCardContent);
             imageCard.setPadding(true);
             imageCard.setSpacing(true);
-            imageCard.setWidth("220px");
+            imageCard.setWidthFull();
             imageCard.getStyle()
                     .set("background", "rgba(255,255,255,0.9)")
                     .set("border", "1px solid #dde4ef")
@@ -222,10 +241,56 @@ public class ImageView extends VerticalLayout {
     }
 
                 private String formatDisplayName(String fileName) {
-                int separator = fileName.indexOf('_');
-                if (separator >= 0 && separator < fileName.length() - 1) {
-                    return fileName.substring(separator + 1);
-                }
-                return fileName;
+        int separator = fileName.indexOf('_');
+        if (separator >= 0 && separator < fileName.length() - 1) {
+            return fileName.substring(separator + 1);
+        }
+        return fileName;
+    }
+
+    private VerticalLayout createSidebar() {
+        VerticalLayout sidebar = new VerticalLayout();
+        sidebar.setWidth("240px");
+        sidebar.setPadding(true);
+        sidebar.setSpacing(true);
+        sidebar.getStyle()
+                .set("background", "rgba(255,255,255,0.9)")
+                .set("border-right", "1px solid #dde4ef")
+                .set("padding", "1.5rem 1rem");
+
+        // Upload section
+        Button uploadBtn = new Button("Upload");
+        uploadBtn.setWidthFull();
+        uploadBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        uploadBtn.getStyle()
+                .set("font-weight", "600")
+                .set("padding", "0.75rem");
+
+        // Images section
+        Button imagesBtn = new Button("Images");
+        imagesBtn.setWidthFull();
+        imagesBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        imagesBtn.getStyle()
+                .set("padding", "0.75rem")
+                .set("justify-content", "flex-start");
+
+        // Favorites section
+        Button favoritesBtn = new Button("Favorites");
+        favoritesBtn.setWidthFull();
+        favoritesBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        favoritesBtn.getStyle()
+                .set("padding", "0.75rem")
+                .set("justify-content", "flex-start");
+
+        // Recently Deleted section
+        Button recentlyDeletedBtn = new Button("Recently Deleted");
+        recentlyDeletedBtn.setWidthFull();
+        recentlyDeletedBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        recentlyDeletedBtn.getStyle()
+                .set("padding", "0.75rem")
+                .set("justify-content", "flex-start");
+
+        sidebar.add(uploadBtn, imagesBtn, favoritesBtn, recentlyDeletedBtn);
+        return sidebar;
     }
 }

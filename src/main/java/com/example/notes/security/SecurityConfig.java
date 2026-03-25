@@ -8,7 +8,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @EnableWebSecurity
 @Configuration
@@ -16,8 +15,20 @@ public class SecurityConfig extends VaadinWebSecurity {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(auth -> auth.requestMatchers(new AntPathRequestMatcher("/register")).permitAll());
+
+        http.authorizeHttpRequests(auth -> auth
+                // ✅ Public pages
+                .requestMatchers("/register").permitAll()
+                .requestMatchers("/image-upload").permitAll()
+                .requestMatchers("/upload").permitAll()
+                .requestMatchers("/api/images/**").permitAll()
+                .requestMatchers("/uploads/**").permitAll()
+        );
+
+        // ✅ Vaadin default security config
         super.configure(http);
+
+        // ✅ Login view
         setLoginView(http, LoginView.class);
     }
 

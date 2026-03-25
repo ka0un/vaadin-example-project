@@ -1,0 +1,72 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+vaadin-app-layout {
+    height: 100dvh;
+    --safe-area-inset-top: 0px;
+    margin: 0 !important;
+    padding-top: 0 !important;
+    inset-block-start: 0 !important;
+}
+
+vaadin-app-layout::part(content) {
+    overflow: auto;
+}
+
+vaadin-app-layout::part(navbar) {
+    margin: 0 !important;
+    padding: 0 !important;
+    inset-block-start: 0 !important;
+    top: 0 !important;
+    min-height: 0 !important;
+    height: 64px !important;
+    box-sizing: border-box;
+    background-color: var(--lumo-base-color);
+}
+
+.app-logo {
+    font-size: 20px;
+    margin: 0 !important;
+}
+
+.logout-button {
+    font-size: 14px;
+}
+
+.app-header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background-color: var(--lumo-base-color);
+}
+
+.app-drawer-content {
+
+    padding-top: 124px !important;
+    background-color: var(--lumo-primary-color);
+    height: 100dvh;
+    box-sizing: border-box;
+}
+
+
+.sidebar-link {
+    color: white;
+    text-decoration: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    display: block;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+vaadin-app-layout::part(drawer) {
+    padding-top: 0 !important;
+}

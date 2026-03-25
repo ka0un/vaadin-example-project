@@ -2,6 +2,7 @@ package com.example.notes.views;
 
 import com.example.notes.data.entity.ImageEntity;
 import com.example.notes.data.repository.ImageRepository;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
@@ -53,15 +54,10 @@ public class ImageUploadView extends VerticalLayout {
         setAlignItems(Alignment.CENTER);
 
         H1 title = new H1("Image Upload & Gallery");
+        title.addClassName("image-upload-heading");
 
         Div uploadSection = new Div();
-        uploadSection.getStyle().set("width", "100%");
-        uploadSection.getStyle().set("max-width", "720px");
-        uploadSection.getStyle().set("margin", "0 auto");
-        uploadSection.getStyle().set("padding", "16px");
-        uploadSection.getStyle().set("border", "1px solid var(--lumo-contrast-10pct)");
-        uploadSection.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
-        uploadSection.getStyle().set("background", "var(--lumo-base-color)");
+        uploadSection.addClassName("image-upload-section");
 
         // Upload section
         Upload upload = new Upload(buffer);
@@ -81,10 +77,7 @@ public class ImageUploadView extends VerticalLayout {
         });
 
         // Preview image
-        previewImage.setWidth("350px");
-        previewImage.setHeight("350px");
-        previewImage.getStyle().set("object-fit", "contain");
-        previewImage.getStyle().set("border", "1px solid #ccc");
+        previewImage.addClassName("image-preview");
         previewImage.setVisible(false);
 
         // Action buttons
@@ -110,13 +103,7 @@ public class ImageUploadView extends VerticalLayout {
         H2 galleryTitle = new H2("Image Gallery");
         add(galleryTitle);
 
-        galleryDiv.getStyle().set("display", "flex");
-        galleryDiv.getStyle().set("flex-wrap", "wrap");
-        galleryDiv.getStyle().set("justify-content", "center");
-        galleryDiv.getStyle().set("gap", "16px");
-        galleryDiv.getStyle().set("padding", "10px 0");
-        galleryDiv.getStyle().set("width", "100%");
-        galleryDiv.getStyle().set("max-width", "960px");
+        galleryDiv.addClassName("image-gallery");
         add(galleryDiv);
     }
 
@@ -196,12 +183,7 @@ public class ImageUploadView extends VerticalLayout {
 
     private Div createImageCard(ImageEntity imageEntity) {
         Div card = new Div();
-        card.getStyle().set("border", "1px solid #ddd");
-        card.getStyle().set("border-radius", "4px");
-        card.getStyle().set("padding", "10px");
-        card.getStyle().set("text-align", "center");
-        card.getStyle().set("width", "220px");
-        card.getStyle().set("background", "var(--lumo-base-color)");
+        card.addClassName("image-card");
 
         // Display image from byte array
         byte[] imageBytes = imageEntity.getData();
@@ -211,24 +193,73 @@ public class ImageUploadView extends VerticalLayout {
         );
 
         Image img = new Image(resource, imageEntity.getFileName());
-        img.setWidth("100%");
-        img.setHeight("200px");
-        img.getStyle().set("object-fit", "cover");
+        img.addClassName("image-card-thumbnail");
+        img.addClickListener(event -> openFullscreenImage(imageEntity));
 
         // File name label
         Div nameDiv = new Div(imageEntity.getFileName());
-        nameDiv.getStyle().set("font-weight", "bold");
-        nameDiv.getStyle().set("margin-top", "10px");
-        nameDiv.getStyle().set("word-break", "break-word");
+        nameDiv.addClassName("image-card-name");
 
         // Delete button
         Button deleteButton = new Button("Delete", event -> handleDelete(imageEntity));
         deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
-        deleteButton.getStyle().set("margin-top", "10px");
-        deleteButton.getStyle().set("width", "100%");
+        deleteButton.addClassName("image-card-delete");
 
         card.add(img, nameDiv, deleteButton);
         return card;
+    }
+
+    private void openFullscreenImage(ImageEntity imageEntity) {
+        Dialog fullScreenDialog = new Dialog();
+        fullScreenDialog.setModal(true);
+        fullScreenDialog.setCloseOnEsc(true);
+        fullScreenDialog.setCloseOnOutsideClick(true);
+        fullScreenDialog.setWidth("100vw");
+        fullScreenDialog.setHeight("100vh");
+        fullScreenDialog.addClassName("fullscreen-dialog");
+
+        // Header with close button
+        HorizontalLayout headerLayout = new HorizontalLayout();
+        headerLayout.addClassName("fullscreen-header");
+        headerLayout.setWidthFull();
+        headerLayout.setJustifyContentMode(JustifyContentMode.END);
+        headerLayout.setPadding(true);
+        headerLayout.setSpacing(false);
+
+        Button closeButton = new Button("×", event -> {
+            fullScreenDialog.close();
+        });
+        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        closeButton.addClassName("fullscreen-image-close");
+        headerLayout.add(closeButton);
+
+        // Center layout for image
+        VerticalLayout centerLayout = new VerticalLayout();
+        centerLayout.addClassName("fullscreen-image-layout");
+        centerLayout.setSizeFull();
+        centerLayout.setPadding(false);
+        centerLayout.setSpacing(false);
+        centerLayout.setAlignItems(Alignment.CENTER);
+        centerLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+
+        StreamResource fullImageResource = new StreamResource(
+                imageEntity.getFileName(),
+                () -> new ByteArrayInputStream(imageEntity.getData())
+        );
+        Image fullImage = new Image(fullImageResource, imageEntity.getFileName());
+        fullImage.addClassName("fullscreen-image");
+        centerLayout.add(fullImage);
+
+        // Main dialog layout
+        VerticalLayout dialogLayout = new VerticalLayout();
+        dialogLayout.setSizeFull();
+        dialogLayout.setPadding(false);
+        dialogLayout.setSpacing(false);
+        dialogLayout.add(headerLayout, centerLayout);
+        dialogLayout.expand(centerLayout);
+
+        fullScreenDialog.add(dialogLayout);
+        fullScreenDialog.open();
     }
 
     private void handleDelete(ImageEntity imageEntity) {

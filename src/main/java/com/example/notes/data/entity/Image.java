@@ -13,6 +13,9 @@ public class Image {
 
     private String filePath;
 
+    // Added field for Favorites logic
+    private boolean favorite = false;
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -24,6 +27,7 @@ public class Image {
         this.fileName = fileName;
         this.filePath = filePath;
         this.user = user;
+        this.favorite = false; // Default to not favorite
     }
 
     // 🔽 Getters & Setters
@@ -53,5 +57,14 @@ public class Image {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    // 🔽 Added Getters & Setters for Favorites
+    public boolean isFavorite() { 
+        return favorite; 
+    }
+
+    public void setFavorite(boolean favorite) { 
+        this.favorite = favorite; 
     }
 }

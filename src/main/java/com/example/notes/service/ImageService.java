@@ -84,4 +84,9 @@ public class ImageService {
     // 2. Tell the notebook to forget about it
     imageRepository.delete(image);
 }
+
+    public void toggleFavorite(Image image) {
+    image.setFavorite(!image.isFavorite());
+    imageRepository.save(image);
+}
 }

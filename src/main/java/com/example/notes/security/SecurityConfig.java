@@ -17,7 +17,7 @@ public class SecurityConfig extends VaadinWebSecurity {
     protected void configure(HttpSecurity http) throws Exception {
 
         http.authorizeHttpRequests(auth -> auth
-                // ✅ Public pages
+                // Public pages
                 .requestMatchers("/register").permitAll()
                 .requestMatchers("/image-upload").permitAll()
                 .requestMatchers("/upload").permitAll()
@@ -25,10 +25,10 @@ public class SecurityConfig extends VaadinWebSecurity {
                 .requestMatchers("/uploads/**").permitAll()
         );
 
-        // ✅ Vaadin default security config
+        // Vaadin default security config
         super.configure(http);
 
-        // ✅ Login view
+        // Login view
         setLoginView(http, LoginView.class);
     }
 

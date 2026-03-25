@@ -13,7 +13,7 @@ import java.nio.file.Paths;
 @RequestMapping("/api/images")
 public class ImageUploadController {
 
-    // ✅ Project root uploads folder
+    //  Project root uploads folder
     private static final String UPLOAD_DIR =
             System.getProperty("user.dir") + "/uploads/";
 

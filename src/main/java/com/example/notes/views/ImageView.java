@@ -7,6 +7,7 @@ import com.example.notes.service.ImageService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
@@ -14,7 +15,6 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.upload.Upload;
@@ -44,9 +44,8 @@ public class ImageView extends VerticalLayout {
 
     private final VerticalLayout galleryLayout = new VerticalLayout();
     private final VerticalLayout emptyStateCard = new VerticalLayout();
-    private final VerticalLayout imageGrid = new VerticalLayout();
+    private final Div imageGrid = new Div(); // Changed to Div for better CSS Grid control
     private final Span emptyTitle = new Span();
-    private final Paragraph emptySubtitle = new Paragraph();
     private final Span worksCounter = new Span();
     private Component uploadPanel;
 
@@ -88,7 +87,6 @@ public class ImageView extends VerticalLayout {
         contentArea.getStyle().set("flex", "1").set("background", "#ffffff").set("overflow-y", "auto");
         contentArea.setPadding(true);
 
-        // ✅ FIXED: Method now exists below
         uploadPanel = createUploadPanel(upload);
         uploadPanel.setVisible(false);
 
@@ -101,7 +99,6 @@ public class ImageView extends VerticalLayout {
         refreshGallery();
     }
 
-    // ✅ FIXED: Added missing method to resolve compilation error
     private Component createUploadPanel(Upload upload) {
         VerticalLayout dropZone = new VerticalLayout();
         dropZone.setAlignItems(Alignment.CENTER);
@@ -109,7 +106,8 @@ public class ImageView extends VerticalLayout {
                 .set("border", "2px dashed #e5e7eb")
                 .set("border-radius", "16px")
                 .set("background", "#f9fafb")
-                .set("padding", "2.5rem");
+                .set("padding", "2.5rem")
+                .set("margin-bottom", "1rem");
 
         Icon uploadIcon = VaadinIcon.PICTURE.create();
         uploadIcon.getStyle().set("color", "#3b82f6").set("font-size", "2rem");
@@ -117,10 +115,9 @@ public class ImageView extends VerticalLayout {
         H3 title = new H3("Drag and drop assets here");
         title.getStyle().set("margin-top", "0.5rem");
         
-        Paragraph subtitle = new Paragraph("Your files will appear in the list below once uploaded.");
+        Paragraph subtitle = new Paragraph("Your files will appear below once uploaded.");
         subtitle.getStyle().set("color", "#6b7280").set("font-size", "0.85rem");
 
-        // Use a nice blue button for selection
         Button selectBtn = new Button("Select Files");
         selectBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         upload.setUploadButton(selectBtn);
@@ -159,6 +156,115 @@ public class ImageView extends VerticalLayout {
         return new VerticalLayout(title, subtitle);
     }
 
+    private Component createGallerySection() {
+        galleryLayout.setWidthFull();
+        imageGrid.setWidthFull();
+        // Dense grid setup
+        imageGrid.getStyle()
+                .set("display", "grid")
+                .set("grid-template-columns", "repeat(auto-fill, minmax(180px, 1fr))")
+                .set("gap", "1rem")
+                .set("margin-top", "1rem");
+        
+        galleryLayout.add(sectionTitle, worksCounter, emptyStateCard, imageGrid);
+        return galleryLayout;
+    }
+
+    private void refreshGallery() {
+        imageGrid.removeAll();
+        List<Image> images = imageService.getUserImages(currentUser);
+        
+        if (activeFilter == GalleryFilter.FAVORITES) {
+            images = images.stream().filter(Image::isFavorite).toList();
+        } 
+
+        worksCounter.setText("Showing " + images.size() + " works");
+        
+        if (images.isEmpty()) {
+            setupEmptyState();
+            emptyStateCard.setVisible(true);
+            imageGrid.setVisible(false);
+        } else {
+            emptyStateCard.setVisible(false);
+            imageGrid.setVisible(true);
+            
+            // Switch grid layout based on view mode
+            if (activeFilter == GalleryFilter.RECENT) {
+                imageGrid.getStyle().set("grid-template-columns", "1fr");
+            } else {
+                imageGrid.getStyle().set("grid-template-columns", "repeat(auto-fill, minmax(180px, 1fr))");
+            }
+
+            for (Image img : images) {
+                imageGrid.add(activeFilter == GalleryFilter.RECENT ? createUploadedFileRow(img) : createImageCard(img));
+            }
+        }
+    }
+
+    private Component createImageCard(Image img) {
+        Div container = new Div();
+        container.getStyle()
+                .set("position", "relative")
+                .set("width", "100%")
+                .set("aspect-ratio", "1 / 1")
+                .set("overflow", "hidden")
+                .set("border-radius", "12px")
+                .set("box-shadow", "0 1px 3px rgba(0,0,0,0.1)");
+
+        com.vaadin.flow.component.html.Image image = new com.vaadin.flow.component.html.Image(generateResource(img), "uploaded");
+        image.getStyle()
+                .set("width", "100%")
+                .set("height", "100%")
+                .set("object-fit", "cover");
+
+        // Action Overlay (Hidden by default, shown on hover)
+        HorizontalLayout actionsOverlay = new HorizontalLayout();
+        actionsOverlay.getStyle()
+                .set("position", "absolute")
+                .set("top", "8px")
+                .set("right", "8px")
+                .set("z-index", "1")
+                .set("opacity", "0.6")
+                .set("transition", "opacity 0.2s ease-in-out");
+        
+        Icon heartIcon = img.isFavorite() ? VaadinIcon.HEART.create() : VaadinIcon.HEART_O.create();
+        Button favBtn = new Button(heartIcon, e -> {
+            imageService.toggleFavorite(img);
+            refreshGallery();
+        });
+        favBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
+        favBtn.getStyle()
+                .set("color", img.isFavorite() ? "#e11d48" : "white")
+                .set("background", "rgba(0,0,0,0.4)")
+                .set("border-radius", "50%")
+                .set("min-width", "32px")
+                .set("height", "32px");
+
+        Button deleteBtn = new Button(new Icon(VaadinIcon.TRASH), e -> {
+            imageService.deleteImage(img);
+            refreshGallery();
+            Notification.show("Deleted successfully");
+        });
+        deleteBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+        deleteBtn.getStyle()
+                .set("background", "rgba(0,0,0,0.4)")
+                .set("color", "white")
+                .set("border-radius", "50%")
+                .set("min-width", "32px")
+                .set("height", "32px");
+
+        actionsOverlay.add(favBtn, deleteBtn);
+        container.add(image, actionsOverlay);
+        
+        // Use JS to handle the hover state for the overlay
+        container.getElement().executeJs(
+            "this.addEventListener('mouseenter', () => this.querySelector('vaadin-horizontal-layout').style.opacity = '1');" +
+            "this.addEventListener('mouseleave', () => this.querySelector('vaadin-horizontal-layout').style.opacity = '0.6');"
+        );
+
+        return container;
+    }
+
     private Component createUploadedFileRow(Image img) {
         HorizontalLayout row = new HorizontalLayout();
         row.setWidthFull();
@@ -192,72 +298,6 @@ public class ImageView extends VerticalLayout {
 
         row.add(thumb, details, successIcon);
         return row;
-    }
-
-    private Component createGallerySection() {
-        galleryLayout.setWidthFull();
-        imageGrid.setWidthFull();
-        imageGrid.getStyle().set("display", "grid").set("gap", "1.5rem");
-        galleryLayout.add(sectionTitle, worksCounter, emptyStateCard, imageGrid);
-        return galleryLayout;
-    }
-
-    private void refreshGallery() {
-        imageGrid.removeAll();
-        List<Image> images = imageService.getUserImages(currentUser);
-        
-        if (activeFilter == GalleryFilter.FAVORITES) {
-            images = images.stream().filter(Image::isFavorite).toList();
-            imageGrid.getStyle().set("grid-template-columns", "repeat(auto-fill, minmax(200px, 1fr))");
-        } else if (activeFilter == GalleryFilter.RECENT) {
-            images = images.stream().limit(8).toList();
-            imageGrid.getStyle().set("grid-template-columns", "1fr"); 
-        } else {
-            imageGrid.getStyle().set("grid-template-columns", "repeat(auto-fill, minmax(200px, 1fr))");
-        }
-
-        worksCounter.setText("Showing " + images.size() + " works");
-        
-        if (images.isEmpty()) {
-            setupEmptyState();
-            emptyStateCard.setVisible(true);
-            imageGrid.setVisible(false);
-        } else {
-            emptyStateCard.setVisible(false);
-            imageGrid.setVisible(true);
-            for (Image img : images) {
-                imageGrid.add(activeFilter == GalleryFilter.RECENT ? createUploadedFileRow(img) : createImageCard(img));
-            }
-        }
-    }
-
-    private Component createImageCard(Image img) {
-        com.vaadin.flow.component.html.Image image = new com.vaadin.flow.component.html.Image(generateResource(img), "uploaded");
-        image.setWidthFull();
-        image.setHeight("200px");
-        image.getStyle().set("object-fit", "cover").set("border-radius", "12px");
-
-        Icon heartIcon = img.isFavorite() ? VaadinIcon.HEART.create() : VaadinIcon.HEART_O.create();
-        Button favBtn = new Button(heartIcon, e -> {
-            imageService.toggleFavorite(img);
-            refreshGallery();
-        });
-        favBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        favBtn.getStyle().set("color", img.isFavorite() ? "#e11d48" : "#6b7280");
-
-        Button deleteBtn = new Button(new Icon(VaadinIcon.TRASH), e -> {
-            imageService.deleteImage(img);
-            refreshGallery();
-        });
-        deleteBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-
-        HorizontalLayout actions = new HorizontalLayout(favBtn, deleteBtn);
-        actions.setWidthFull();
-        actions.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-
-        VerticalLayout card = new VerticalLayout(image, new Span(formatDisplayName(img.getFileName())), actions);
-        card.getStyle().set("border", "1px solid #e5e7eb").set("border-radius", "16px");
-        return card;
     }
 
     private void initSidebarActions() {

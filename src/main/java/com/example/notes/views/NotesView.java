@@ -4,6 +4,7 @@ import com.example.notes.data.entity.Note;
 import com.example.notes.data.entity.User;
 import com.example.notes.data.repository.UserRepository;
 import com.example.notes.service.NoteService;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Span;
@@ -18,7 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.annotation.security.PermitAll;
 
-@Route(value = "", layout = MainLayout.class)
+@Route(value = "notes", layout = MainLayout.class)
 @PageTitle("Notes | Vaadin Notes App")
 @PermitAll
 public class NotesView extends VerticalLayout {
@@ -38,6 +39,7 @@ public class NotesView extends VerticalLayout {
 
         this.currentUser = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalStateException("User not found in DB"));
+
 
         setSizeFull();
         setAlignItems(Alignment.CENTER);

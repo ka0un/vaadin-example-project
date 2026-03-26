@@ -6,10 +6,15 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 
+
+//@Route(value = "")
+@PageTitle("Home | Vaadin Notes App")
 public class MainLayout extends AppLayout {
 
     private final transient AuthenticationContext authContext;
@@ -36,6 +41,9 @@ public class MainLayout extends AppLayout {
     }
 
     private void createDrawer() {
-        addToDrawer(new RouterLink("My Notes", NotesView.class));
+        RouterLink myNotes = new RouterLink("My Notes", NotesView.class);
+        RouterLink myImages = new RouterLink("My Images", ImageView.class);
+
+        addToDrawer(myNotes, myImages);
     }
 }

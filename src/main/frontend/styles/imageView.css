@@ -1,0 +1,170 @@
+/* ── Title ──────────────────────────────────────────────── */
+.image-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* ── Upload card ─────────────────────────────────────────── */
+.upload-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px;
+    border: 2px dashed #ccc;
+    border-radius: 12px;
+    background: #fafafa;
+    width: 100%;
+    max-width: 560px;
+    box-sizing: border-box;
+}
+
+/* ── Upload box ──────────────────────────────────────────── */
+.upload-box,
+.upload-box vaadin-upload,
+vaadin-upload.upload-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+}
+
+.upload-box::part(primary-buttons) {
+    display: flex;
+    justify-content: center; /* keep buttons aligned */
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+}
+
+.upload-box::part(upload-button) {
+    width: auto; /* avoid full-width button that can look left-aligned */
+    box-sizing: border-box;
+}
+
+.upload-box::part(drop-label) {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ── Progress label ──────────────────────────────────────── */
+.upload-progress-label {
+    font-size: 13px;
+    color: var(--lumo-secondary-text-color);
+    text-align: center;
+    width: 100%;
+}
+
+/* ── Gallery toolbar ─────────────────────────────────────── */
+.gallery-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 16px;
+    width: 100%;
+    box-sizing: border-box;
+    flex-wrap: wrap;
+}
+
+
+/* ── Gallery grid ────────────────────────────────────────── */
+.image-gallery {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+/* ── Image card ──────────────────────────────────────────── */
+.image-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.image-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Selected card ───────────────────────────────────────── */
+.image-card--selected {
+    border-color: var(--lumo-primary-color, #1676f3);
+    background: #eef4ff;
+}
+
+.image-card--selected .image-card-img {
+    box-shadow: 0 0 0 3px rgba(22, 118, 243, 0.2);
+}
+
+/* ── Image ───────────────────────────────────────────────── */
+.image-card-img {
+    width: 180px;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+    .upload-card {
+        padding: 12px;
+        max-width: 100%;
+    }
+
+    .gallery-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+
+    .image-card-img {
+        width: 140px;
+        height: 110px;
+    }
+}
+
+.toolbar-btn {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 220px;
+    white-space: nowrap; /* prevent multi-line button text */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Smaller toolbar buttons (only in gallery toolbar) */
+.gallery-toolbar .toolbar-btn {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+.gallery-toolbar vaadin-icon {
+    width: 16px;
+    height: 16px;
+}
+
+@media (max-width: 600px) {
+    .gallery-toolbar .toolbar-btn {
+        max-width: 100%;
+        width: 100%;
+    }
+}
+
+
+

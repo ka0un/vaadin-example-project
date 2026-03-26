@@ -40,3 +40,8 @@ build/
 /src/main/frontend/generated/
 /frontend/generated/
 /src/main/bundles/
+
+target/
+node_modules/
+.idea/
+*.class

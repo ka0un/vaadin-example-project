@@ -9,6 +9,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.upload.Upload;
@@ -47,8 +48,12 @@ public class ImageView extends VerticalLayout {
         MemoryBuffer buffer = new MemoryBuffer();
         Upload upload = new Upload(buffer);
 
-
+        upload.setMaxFileSize(5 * 1024 * 1024); 
         upload.setAcceptedFileTypes("image/*");
+
+        upload.addFileRejectedListener(event -> {
+            Notification.show("File rejected: " + event.getErrorMessage(), 3000, Notification.Position.MIDDLE);
+        });
 
         upload.addSucceededListener(event -> {
             try {

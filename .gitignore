@@ -42,6 +42,8 @@ build/
 /src/main/bundles/
 
 target/
-node_modules/
 .idea/
 *.class
+
+package.json
+package-lock.json

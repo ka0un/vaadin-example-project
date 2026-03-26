@@ -8,24 +8,23 @@ import java.time.LocalDateTime;
 public class Image {
 
     @Id
-    private Integer id;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
     private String fileName;
-    private String filePath;
     private long fileSize;
     private String format;
     private int width;
     private int height;
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -35,14 +34,6 @@ public class Image {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
-    }
-
-    public String getFilePath() {
-        return filePath;
-    }
-
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
     }
 
     public long getFileSize() {

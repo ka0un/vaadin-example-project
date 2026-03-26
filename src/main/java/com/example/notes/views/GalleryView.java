@@ -1,42 +1,54 @@
 package com.example.notes.views;
 
+import com.example.notes.data.dto.ImageDto;
+import com.example.notes.data.dto.ImageThumbnailDto;
 import com.example.notes.data.entity.Image;
 import com.example.notes.data.entity.Note;
 import com.example.notes.data.entity.User;
 import com.example.notes.data.repository.UserRepository;
 import com.example.notes.service.ImageService;
 import com.example.notes.service.NoteService;
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.flowingcode.vaadin.addons.imagecrop.ImageCrop;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.security.AuthenticationContext;
+import jakarta.persistence.EntityNotFoundException;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.annotation.security.PermitAll;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @Route(value = "gallery", layout = MainLayout.class)
 @PageTitle("Gallery | Vaadin Notes App")
 @PermitAll
+@CssImport("./styles/sharedCss.css")
 public class GalleryView extends VerticalLayout {
 
     private final ImageService imageService;
     private final User currentUser;
+    List<ImageThumbnailDto> images;
 
     private final Div galleryContainer = new Div();
 
@@ -87,7 +99,7 @@ public class GalleryView extends VerticalLayout {
         Button uploadButton = new Button("Upload Image");
         upload.setUploadButton(uploadButton);
 
-        upload.setHeight("200px");
+        upload.setHeight("350px");
         return upload;
     }
 
@@ -107,19 +119,19 @@ public class GalleryView extends VerticalLayout {
 
         galleryContainer.removeAll();
 
-        List<Image> images = imageService.getAllImagesByUser(currentUser);
+        images = imageService.getAllImagesByUser();
 
         galleryContainer.add(createUploadSection());
-        for (Image img : images) {
+        for (ImageThumbnailDto img : images) {
             galleryContainer.add(createImageCard(img));
         }
     }
 
-    private Component createImageCard(Image img) {
+    private Component createImageCard(ImageThumbnailDto img) {
 
         Div card = new Div();
         card.setWidthFull();
-        card.setHeight("200px");
+        card.setHeight("350px");
 
         card.getStyle()
                 .set("overflow", "hidden")
@@ -127,14 +139,7 @@ public class GalleryView extends VerticalLayout {
                 .set("cursor", "pointer");
 
         // Image
-        com.vaadin.flow.component.html.Image image =
-                new com.vaadin.flow.component.html.Image(
-                        "/" + img.getId(),
-                        img.getFileName()
-                );
-
-        image.setWidthFull();
-        image.setHeightFull();
+        com.vaadin.flow.component.html.Image image = getImage(img);
 
         image.getStyle()
                 .set("object-fit", "cover")
@@ -148,69 +153,174 @@ public class GalleryView extends VerticalLayout {
                 e -> image.getStyle().set("transform", "scale(1)"));
 
         // 🔥 Click → open dialog
-        card.addClickListener(e -> openImageDialog(img));
+        card.addClickListener(e -> openImageDialog(img.getId()));
 
         card.add(image);
 
         return card;
     }
 
-    private void openImageDialog(Image img) {
+    private com.vaadin.flow.component.html.@NonNull Image getImage(ImageThumbnailDto img) {
+        StreamResource streamResource = new StreamResource(String.valueOf(img.getId()), () -> {
+            try {
+                return img.getResource().getInputStream();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        com.vaadin.flow.component.html.Image image = new com.vaadin.flow.component.html.Image(streamResource, "Thumbnail " + img.getId());
+//        com.vaadin.flow.component.html.Image image =
+//                new com.vaadin.flow.component.html.Image(
+//                        "/" + img.getId(),
+//                        img.getFileName()
+//                );
+
+        image.setWidthFull();
+        image.setHeightFull();
+        return image;
+    }
+
+    private void openImageDialog(Long imgId){
+
+        ImageDto imageDto = imageService.getImageForUser(imgId);
+
+        Image imageEntity = imageDto.getImage();
 
         Dialog dialog = new Dialog();
-        dialog.setWidth("600px");
 
-        VerticalLayout layout = new VerticalLayout();
-        layout.setAlignItems(Alignment.CENTER);
+        Div mainDiv = new Div();
+        mainDiv.addClassName("responsive-main");
 
-        // Image (bigger preview)
-        com.vaadin.flow.component.html.Image fullImage =
-                new com.vaadin.flow.component.html.Image(
-                        "/" + img.getId(),
-                        img.getFileName()
-                );
+        Div divA = new Div();
 
-        fullImage.setMaxWidth("100%");
-        fullImage.setMaxHeight("400px");
-        fullImage.getStyle().set("object-fit", "contain");
+        com.vaadin.flow.component.html.Image image;
 
-        // Metadata
-        Span name = new Span("Name: " + img.getFileName());
-        Span size = new Span("Size: " + formatFileSize(img.getFileSize()));
-        Span dimensions = new Span("Resolution: " + img.getWidth() + "x" + img.getHeight());
-        Span format = new Span("Format: " + img.getFormat().toUpperCase());
+        StreamResource streamResource = new StreamResource(String.valueOf(imgId), () -> {
+            try {
+                return imageDto.getImageResource().getInputStream();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
-        VerticalLayout meta = new VerticalLayout(name, size, dimensions, format);
-        meta.setSpacing(false);
+        image = new com.vaadin.flow.component.html.Image(streamResource, String.valueOf(imgId));
+
+        image.getStyle()
+                .set("max-height", "500px")
+                .set("width", "auto")
+                .setMaxWidth("400px")
+                .set("height", "auto")
+                .setBackgroundColor("white")
+                .set("display", "block");
+
+        divA.add(image);
+
+        Div divB = new Div();
+        divB.getStyle()
+                .setBackgroundColor("white")
+                .set("max-width", "300px");
+
+        VerticalLayout meta = new VerticalLayout(
+                createMetaRow("Name", imageEntity.getFileName()),
+                createMetaRow("Size", formatFileSize(imageEntity.getFileSize())),
+                createMetaRow("Resolution", imageEntity.getWidth() + "x" + imageEntity.getHeight()),
+                createMetaRow("Format", imageEntity.getFormat().toUpperCase())
+        );
         meta.setPadding(false);
 
-        // Buttons
+
         Button cropBtn = new Button("Crop");
         Button deleteBtn = new Button("Delete");
 
         deleteBtn.getStyle().set("color", "red");
-
-        // 🔥 Delete logic
         deleteBtn.addClickListener(e -> {
             try {
-                imageService.deleteImage(img.getId(),currentUser);
+                imageService.deleteImage(imageEntity.getId(), currentUser);
+
+                dialog.close();
+                refreshGallery();
+
+                Notification.show("Image deleted successfully", 2000, Notification.Position.BOTTOM_START);
+
+            } catch (AccessDeniedException ex) {
+                Notification.show("You are not allowed to delete this image.");
+
+            } catch (EntityNotFoundException ex) {
+                Notification.show("Image not found.");
+
             } catch (IOException ex) {
-                Notification.show("The image does not exist.");
-                return;
+                Notification.show("Failed to delete image file.");
+
+            } catch (Exception ex) {
+                Notification.show("Unexpected error occurred.");
             }
-            dialog.close();
-            refreshGallery();
         });
 
         HorizontalLayout actions = new HorizontalLayout(cropBtn, deleteBtn);
+        actions.getStyle()
+                .setWidth("100%")
+                .set("border-top", "1px solid rgba(0,0,0,0.3)")
+                .set("padding-top", "10px")
+                .set("margin-top", "10px");
 
-        layout.add(fullImage, meta, actions);
-        dialog.add(layout);
+        VerticalLayout metaAndActionsLayout = new VerticalLayout(meta, actions);
+
+        divB.add(metaAndActionsLayout);
+
+        mainDiv.add(divA, divB);
+
+        Button leftBtn = new Button(FontAwesome.Solid.ARROW_LEFT.create());
+        leftBtn.addClassName("arrow-btn");
+        Button rightBtn = new Button(FontAwesome.Solid.ARROW_RIGHT.create());
+        rightBtn.addClassName("arrow-btn");
+
+        leftBtn.addClickListener(e -> System.out.println("left"));
+        rightBtn.addClickListener(e -> System.out.println("right"));
+
+        // Top navigation buttons
+        HorizontalLayout navBar = new HorizontalLayout(leftBtn, rightBtn);
+        navBar.setWidthFull();
+        navBar.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+
+// Optional styling (clean look)
+        navBar.getStyle()
+                .set("border-bottom", "1px solid rgba(0,0,0,0.1)")
+                .set("padding-bottom", "8px")
+                .set("margin-bottom", "10px");
+
+// Wrapper (vertical now)
+        VerticalLayout wrapper = new VerticalLayout(navBar, mainDiv);
+        wrapper.setPadding(false);
+        wrapper.setSpacing(false);
+        wrapper.setWidthFull();
+
+        dialog.add(wrapper);
 
         dialog.open();
     }
 
-    // 🔹 Helper: format file size
+    private Component createMetaRow(String labelText, String valueText) {
+
+        Span label = new Span(labelText);
+        label.getStyle()
+                .set("font-size", "12px")
+                .set("color", "#777")
+                .set("font-family", "Helvetica, Arial, sans-serif");
+
+        Span value = new Span(valueText);
+        value.getStyle()
+                .set("font-size", "14px")
+                .set("font-weight", "600")
+                .set("font-family", "Helvetica, Arial, sans-serif");
+
+        VerticalLayout row = new VerticalLayout(label, value);
+        row.setSpacing(false);
+        row.setPadding(false);
+
+        return row;
+    }
+
     private String formatFileSize(long size) {
         if (size < 1024) return size + " B";
         if (size < 1024 * 1024) return (size / 1024) + " KB";

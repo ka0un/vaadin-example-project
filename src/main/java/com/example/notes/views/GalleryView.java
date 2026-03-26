@@ -3,29 +3,22 @@ package com.example.notes.views;
 import com.example.notes.data.dto.ImageDto;
 import com.example.notes.data.dto.ImageThumbnailDto;
 import com.example.notes.data.entity.Image;
-import com.example.notes.data.entity.Note;
 import com.example.notes.data.entity.User;
 import com.example.notes.data.repository.UserRepository;
 import com.example.notes.service.ImageService;
-import com.example.notes.service.NoteService;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
-import com.flowingcode.vaadin.addons.imagecrop.ImageCrop;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
-import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
@@ -49,6 +42,7 @@ public class GalleryView extends VerticalLayout {
     private final ImageService imageService;
     private final User currentUser;
     List<ImageThumbnailDto> images;
+    private int currentIndex = -1;
 
     private final Div galleryContainer = new Div();
 
@@ -123,11 +117,11 @@ public class GalleryView extends VerticalLayout {
 
         galleryContainer.add(createUploadSection());
         for (ImageThumbnailDto img : images) {
-            galleryContainer.add(createImageCard(img));
+            galleryContainer.add(createImageCard(img, images.indexOf(img)));
         }
     }
 
-    private Component createImageCard(ImageThumbnailDto img) {
+    private Component createImageCard(ImageThumbnailDto img, int index) {
 
         Div card = new Div();
         card.setWidthFull();
@@ -153,7 +147,7 @@ public class GalleryView extends VerticalLayout {
                 e -> image.getStyle().set("transform", "scale(1)"));
 
         // 🔥 Click → open dialog
-        card.addClickListener(e -> openImageDialog(img.getId()));
+        card.addClickListener(e -> openImageDialog(index));
 
         card.add(image);
 
@@ -170,21 +164,24 @@ public class GalleryView extends VerticalLayout {
         });
 
         com.vaadin.flow.component.html.Image image = new com.vaadin.flow.component.html.Image(streamResource, "Thumbnail " + img.getId());
-//        com.vaadin.flow.component.html.Image image =
-//                new com.vaadin.flow.component.html.Image(
-//                        "/" + img.getId(),
-//                        img.getFileName()
-//                );
+
+        image.getElement().setAttribute("loading", "lazy");
 
         image.setWidthFull();
         image.setHeightFull();
         return image;
     }
 
-    private void openImageDialog(Long imgId){
+    private void openImageDialog(int index){
 
-        ImageDto imageDto = imageService.getImageForUser(imgId);
+        if (index < 0 || index >= images.size()) return;
 
+        currentIndex = index;
+
+        ImageThumbnailDto imageThumbnailDto = images.get(index);
+        Long imageId = imageThumbnailDto.getId();
+
+        ImageDto imageDto = imageService.getImageForUser(imageId);
         Image imageEntity = imageDto.getImage();
 
         Dialog dialog = new Dialog();
@@ -196,7 +193,7 @@ public class GalleryView extends VerticalLayout {
 
         com.vaadin.flow.component.html.Image image;
 
-        StreamResource streamResource = new StreamResource(String.valueOf(imgId), () -> {
+        StreamResource streamResource = new StreamResource(String.valueOf(imageId), () -> {
             try {
                 return imageDto.getImageResource().getInputStream();
             } catch (IOException e) {
@@ -204,14 +201,13 @@ public class GalleryView extends VerticalLayout {
             }
         });
 
-        image = new com.vaadin.flow.component.html.Image(streamResource, String.valueOf(imgId));
+        image = new com.vaadin.flow.component.html.Image(streamResource, String.valueOf(imageId));
 
         image.getStyle()
                 .set("max-height", "500px")
                 .set("width", "auto")
                 .setMaxWidth("400px")
                 .set("height", "auto")
-                .setBackgroundColor("white")
                 .set("display", "block");
 
         divA.add(image);
@@ -275,15 +271,38 @@ public class GalleryView extends VerticalLayout {
         Button rightBtn = new Button(FontAwesome.Solid.ARROW_RIGHT.create());
         rightBtn.addClassName("arrow-btn");
 
-        leftBtn.addClickListener(e -> System.out.println("left"));
-        rightBtn.addClickListener(e -> System.out.println("right"));
+        leftBtn.addClickListener(e -> {
+            int prevIndex = currentIndex - 1;
+
+            dialog.close();
+            openImageDialog(prevIndex);
+        });
+        rightBtn.addClickListener(e -> {
+            int nextIndex = currentIndex + 1;
+
+            dialog.close();
+            openImageDialog(nextIndex);
+        });
 
         // Top navigation buttons
-        HorizontalLayout navBar = new HorizontalLayout(leftBtn, rightBtn);
+        HorizontalLayout navBar = new HorizontalLayout();
         navBar.setWidthFull();
-        navBar.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
 
-// Optional styling (clean look)
+        Div spacer = new Div();
+        spacer.getStyle().set("flex-grow", "1");
+
+        boolean hasPrevious = currentIndex > 0;
+        boolean hasNext = currentIndex < images.size() - 1;
+
+        if (hasPrevious) {
+            navBar.add(leftBtn);
+        }
+
+        navBar.add(spacer); // always present
+
+        if (hasNext) {
+            navBar.add(rightBtn);
+        }
         navBar.getStyle()
                 .set("border-bottom", "1px solid rgba(0,0,0,0.1)")
                 .set("padding-bottom", "8px")

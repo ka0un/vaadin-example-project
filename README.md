@@ -19,6 +19,32 @@ Before you can run this project, you need to have **Java** installed on your com
 ### 1. Install Java 21 (JDK)
 This project requires **Java 21**. A "JDK" (Java Development Kit) contains the tools needed to develop and run Java applications.
 
+## Image Gallery Feature
+
+The application includes a beautiful, responsive image gallery where you can upload and manage your images.
+
+### Features
+- **Secure Upload**: images are stored locally and only accessible to the owner.
+- **Required Titles**: Every image must have a title/caption before upload.
+- **Uniform Grid**: A clean, consistent grid layout for all your images.
+- **Full-Screen Preview**: Click any image to open a high-quality lightbox.
+- **Navigation Controls**: Easily shift between images in the lightbox using Next/Previous buttons.
+- **Hover Deletion**: Delete images directly from the gallery with a quick-action button on hover.
+
+### How to use
+1. Log in to your account.
+2. Click **My Gallery** in the sidebar.
+3. Enter a title for your image(s).
+4. Drag and drop images into the upload area or click browse.
+5. Once uploaded, click an image card to open the preview.
+6. Use the arrows to navigate through your collection.
+
+### Technical Details
+- **Supported Formats**: JPEG, PNG, GIF, WebP.
+- **Max File Size**: 10 MB per image.
+- **Storage**: Images are saved in the `uploads/` directory on your disk.
+- **Database**: Metadata (captions, timestamps) is stored in the H2 database.
+
 **For Windows / macOS / Linux:**
 1. Go to the [Adoptium Eclipse Temurin Website](https://adoptium.net/temurin/releases/?version=21) (a popular, free, and open-source distribution of Java).
 2. Select your Operating System (e.g., Windows), Architecture (e.g., x64), and Package Type (`JDK`).

@@ -21,7 +21,7 @@ public class MainLayout extends AppLayout {
     }
 
     private void createHeader() {
-        H1 logo = new H1("Vaadin Notes App");
+        H1 logo = new H1("Vaadin Notes & Gallery");
         logo.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.MEDIUM);
 
         Button logout = new Button("Log out", e -> authContext.logout());
@@ -36,6 +36,10 @@ public class MainLayout extends AppLayout {
     }
 
     private void createDrawer() {
-        addToDrawer(new RouterLink("My Notes", NotesView.class));
+        RouterLink notesLink   = new RouterLink("📝  My Notes",   NotesView.class);
+        RouterLink galleryLink = new RouterLink("🖼️  My Gallery", ImageGalleryView.class);
+        notesLink.addClassNames(LumoUtility.Display.BLOCK, LumoUtility.Padding.SMALL);
+        galleryLink.addClassNames(LumoUtility.Display.BLOCK, LumoUtility.Padding.SMALL);
+        addToDrawer(notesLink, galleryLink);
     }
 }

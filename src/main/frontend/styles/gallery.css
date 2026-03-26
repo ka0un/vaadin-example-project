@@ -1,0 +1,120 @@
+/* ── Gallery view wrapper ─────────────────────────────────────── */
+.gallery-view {
+  padding: var(--lumo-space-m);
+  background: var(--lumo-base-color);
+  min-height: 100%;
+}
+
+.gallery-view__header {
+  margin-bottom: var(--lumo-space-l);
+}
+
+.gallery-view__title {
+  margin: 0;
+  font-size: var(--lumo-font-size-xxl);
+  font-weight: 700;
+  color: var(--lumo-header-text-color);
+}
+
+.gallery-view__subtitle {
+  margin: var(--lumo-space-xs) 0 0;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* ── Upload area ──────────────────────────────────────────────── */
+.gallery-upload {
+  background: var(--lumo-contrast-5pct);
+  border: 4px dashed var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-l);
+  padding: var(--lumo-space-l);
+  margin-bottom: var(--lumo-space-xl);
+}
+
+.gallery-upload__caption {
+  margin-bottom: var(--lumo-space-s);
+}
+
+/* ── Gallery Grid ─────────────────────────────────────────────── */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* Fixed 5 images per row */
+  gap: 10px; /* Small spacing between images */
+  width: 100%;
+  padding: var(--lumo-space-m) 0;
+}
+
+@media (max-width: 900px) {
+  .gallery-grid {
+    grid-template-columns: repeat(3, 1fr); /* Fallback for smaller screens */
+  }
+}
+
+@media (max-width: 600px) {
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr); /* Fallback for mobile */
+  }
+}
+
+/* ── Image card ───────────────────────────────────────────────── */
+.gallery-card {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--lumo-border-radius-m);
+  overflow: hidden;
+  box-shadow: var(--lumo-box-shadow-s);
+  background: var(--lumo-base-color);
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.gallery-card:hover {
+  transform: scale(1.02);
+}
+
+.gallery-card__thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-card__delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-radius: 50% !important;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  padding: 0 !important;
+  width: 32px;
+  height: 32px;
+}
+
+.gallery-card:hover .gallery-card__delete {
+  opacity: 1;
+}
+
+/* ── Lightbox Overlay (Pop-up centered in middle) ──────────────── */
+.lightbox-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--lumo-space-m);
+    padding: var(--lumo-space-s);
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+.lightbox-image {
+    max-width: 80vw;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: var(--lumo-border-radius-s);
+}
+
+.lightbox-nav-button {
+    flex-shrink: 0;
+}

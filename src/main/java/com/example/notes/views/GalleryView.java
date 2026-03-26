@@ -155,6 +155,14 @@ public class GalleryView extends VerticalLayout {
     }
 
     private com.vaadin.flow.component.html.@NonNull Image getImage(ImageThumbnailDto img) {
+
+        if(img.getResource() == null) {
+            com.vaadin.flow.component.html.Image image = new com.vaadin.flow.component.html.Image("/Image-not-found.png", "No Image Found");
+            image.setWidthFull();
+            image.setHeightFull();
+            return image;
+        }
+
         StreamResource streamResource = new StreamResource(String.valueOf(img.getId()), () -> {
             try {
                 return img.getResource().getInputStream();
@@ -164,8 +172,6 @@ public class GalleryView extends VerticalLayout {
         });
 
         com.vaadin.flow.component.html.Image image = new com.vaadin.flow.component.html.Image(streamResource, "Thumbnail " + img.getId());
-
-        image.getElement().setAttribute("loading", "lazy");
 
         image.setWidthFull();
         image.setHeightFull();
@@ -192,16 +198,24 @@ public class GalleryView extends VerticalLayout {
         Div divA = new Div();
 
         com.vaadin.flow.component.html.Image image;
+        
+        if(imageDto.getImageResource() == null) {
+            
+            image = new com.vaadin.flow.component.html.Image("/Image-not-found.png", "No Image Found");
+        
+        }else {
 
-        StreamResource streamResource = new StreamResource(String.valueOf(imageId), () -> {
-            try {
-                return imageDto.getImageResource().getInputStream();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+            StreamResource streamResource = new StreamResource(String.valueOf(imageId), () -> {
+                try {
+                    return imageDto.getImageResource().getInputStream();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
-        image = new com.vaadin.flow.component.html.Image(streamResource, String.valueOf(imageId));
+            image = new com.vaadin.flow.component.html.Image(streamResource, String.valueOf(imageId));
+
+        }
 
         image.getStyle()
                 .set("max-height", "500px")

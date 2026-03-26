@@ -112,16 +112,22 @@ public class ImageService {
         com.example.notes.data.entity.User loggedUser = userRepository.findByUsername(springUser.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        Image img = imageRepository.findByIdAndUserId(id, loggedUser.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
+        Image img = imageRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        if (!img.getUser().getId().equals(loggedUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
 
         Path path = Paths.get(uploadDir).resolve(id +"."+ img.getFormat());
 
         Resource resource = null;
 
-        try {
-            resource = new UrlResource(path.toUri());
-        }catch (MalformedURLException ignored){}
+        if (Files.exists(path) && Files.isRegularFile(path)) {
+            try {
+                resource = new UrlResource(path.toUri());
+            } catch (MalformedURLException ignored) {}
+        }
 
         return new ImageDto(img, resource);
     }
@@ -140,15 +146,13 @@ public class ImageService {
 
         for (Image img : images) {
             Path thumbPath = Paths.get(uploadDir).resolve(img.getId() + "_thumb." + img.getFormat());
-            if (!Files.exists(thumbPath)) {
-                // skip or optionally generate thumbnail on the fly
-                continue;
-            }
-
             Resource resource = null;
-            try {
-                resource = new UrlResource(thumbPath.toUri());
-            } catch (MalformedURLException ignored) {}
+
+            if (Files.exists(thumbPath)) {
+                try {
+                    resource = new UrlResource(thumbPath.toUri());
+                } catch (MalformedURLException ignored) {}
+            }
 
             thumbnails.add(new ImageThumbnailDto(img.getId(), resource));
         }

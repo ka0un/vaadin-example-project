@@ -8,6 +8,8 @@ import com.example.notes.data.repository.UserRepository;
 import com.example.notes.service.ImageService;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -19,6 +21,8 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
+import com.vaadin.flow.dom.DomEventListener;
+import com.vaadin.flow.dom.DomListenerRegistration;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
@@ -309,12 +313,14 @@ public class GalleryView extends VerticalLayout {
         boolean hasNext = currentIndex < images.size() - 1;
 
         if (hasPrevious) {
+            leftBtn.addClickShortcut(Key.ARROW_LEFT);
             navBar.add(leftBtn);
         }
 
         navBar.add(spacer); // always present
 
         if (hasNext) {
+            rightBtn.addClickShortcut(Key.ARROW_RIGHT);
             navBar.add(rightBtn);
         }
         navBar.getStyle()

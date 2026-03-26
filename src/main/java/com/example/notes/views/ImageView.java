@@ -7,6 +7,8 @@ import com.example.notes.service.ImageService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dnd.DragSource;
+import com.vaadin.flow.component.dnd.DropTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
@@ -15,6 +17,8 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexWrap;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.upload.Upload;
@@ -42,10 +46,14 @@ public class ImageView extends VerticalLayout {
     private final CurrentUserService userService;
     private final User currentUser;
 
+    // --- State Variables ---
+    private Image draggedImage; 
+    private GalleryFilter activeFilter = GalleryFilter.ALL;
+
+    // --- UI Components ---
     private final VerticalLayout galleryLayout = new VerticalLayout();
     private final VerticalLayout emptyStateCard = new VerticalLayout();
-    private final Div imageGrid = new Div(); // Changed to Div for better CSS Grid control
-    private final Span emptyTitle = new Span();
+    private final Div imageGrid = new Div(); 
     private final Span worksCounter = new Span();
     private Component uploadPanel;
 
@@ -53,7 +61,6 @@ public class ImageView extends VerticalLayout {
     private final Button allPhotosBtn = new Button("All photos", VaadinIcon.GRID_BIG_O.create());
     private final Button favoritesBtn = new Button("Favorites", VaadinIcon.HEART_O.create());
     private final Button uploadMediaBtn = new Button("Upload media", VaadinIcon.UPLOAD.create());
-    private GalleryFilter activeFilter = GalleryFilter.ALL;
 
     public ImageView(ImageService imageService, CurrentUserService userService) {
         this.imageService = imageService;
@@ -99,9 +106,39 @@ public class ImageView extends VerticalLayout {
         refreshGallery();
     }
 
+    // --- Reordering Logic ---
+    private void reorderImages(Image source, Image target) {
+        List<Image> currentImages = imageService.getUserImages(currentUser);
+        
+        int sourceIndex = -1;
+        int targetIndex = -1;
+
+        for (int i = 0; i < currentImages.size(); i++) {
+            if (currentImages.get(i).getId().equals(source.getId())) sourceIndex = i;
+            if (currentImages.get(i).getId().equals(target.getId())) targetIndex = i;
+        }
+
+        if (sourceIndex != -1 && targetIndex != -1) {
+            Image movingImage = currentImages.remove(sourceIndex);
+            currentImages.add(targetIndex, movingImage);
+            
+            refreshGridWithCustomList(currentImages);
+            Notification.show("Moved to new position");
+        }
+    }
+
+    private void refreshGridWithCustomList(List<Image> customList) {
+        imageGrid.removeAll();
+        worksCounter.setText("Showing " + customList.size() + " works");
+        for (Image img : customList) {
+            imageGrid.add(createImageCard(img));
+        }
+    }
+
+    // --- UI Builders ---
     private Component createUploadPanel(Upload upload) {
         VerticalLayout dropZone = new VerticalLayout();
-        dropZone.setAlignItems(Alignment.CENTER);
+        dropZone.setAlignItems(FlexComponent.Alignment.CENTER);
         dropZone.getStyle()
                 .set("border", "2px dashed #e5e7eb")
                 .set("border-radius", "16px")
@@ -159,7 +196,6 @@ public class ImageView extends VerticalLayout {
     private Component createGallerySection() {
         galleryLayout.setWidthFull();
         imageGrid.setWidthFull();
-        // Dense grid setup
         imageGrid.getStyle()
                 .set("display", "grid")
                 .set("grid-template-columns", "repeat(auto-fill, minmax(180px, 1fr))")
@@ -178,27 +214,47 @@ public class ImageView extends VerticalLayout {
             images = images.stream().filter(Image::isFavorite).toList();
         } 
 
-        worksCounter.setText("Showing " + images.size() + " works");
-        
         if (images.isEmpty()) {
             setupEmptyState();
             emptyStateCard.setVisible(true);
             imageGrid.setVisible(false);
+            worksCounter.setVisible(false);
         } else {
             emptyStateCard.setVisible(false);
             imageGrid.setVisible(true);
+            worksCounter.setVisible(true);
+            worksCounter.setText("Showing " + images.size() + " works");
             
-            // Switch grid layout based on view mode
-            if (activeFilter == GalleryFilter.RECENT) {
-                imageGrid.getStyle().set("grid-template-columns", "1fr");
-            } else {
-                imageGrid.getStyle().set("grid-template-columns", "repeat(auto-fill, minmax(180px, 1fr))");
-            }
-
             for (Image img : images) {
                 imageGrid.add(activeFilter == GalleryFilter.RECENT ? createUploadedFileRow(img) : createImageCard(img));
             }
         }
+    }
+
+    private void setupEmptyState() {
+        emptyStateCard.removeAll();
+        emptyStateCard.setAlignItems(FlexComponent.Alignment.CENTER);
+        emptyStateCard.setJustifyContentMode(JustifyContentMode.CENTER);
+        emptyStateCard.getStyle()
+                .set("padding", "4rem")
+                .set("border", "2px dashed #e5e7eb")
+                .set("border-radius", "16px")
+                .set("margin-top", "2rem")
+                .set("background", "#fcfcfc");
+
+        Icon icon = VaadinIcon.PICTURE.create();
+        icon.getStyle().set("font-size", "3.5rem").set("color", "#d1d5db");
+
+        String titleText = activeFilter == GalleryFilter.FAVORITES ? "No favorites yet" : "Your gallery is empty";
+        String descText = activeFilter == GalleryFilter.FAVORITES ? 
+            "Heart your favorite images to see them here." : 
+            "Drag and drop your first image or use the 'Upload media' tab to get started.";
+
+        H3 title = new H3(titleText);
+        Paragraph description = new Paragraph(descText);
+        description.getStyle().set("color", "#6b7280").set("text-align", "center");
+
+        emptyStateCard.add(icon, title, description);
     }
 
     private Component createImageCard(Image img) {
@@ -211,20 +267,31 @@ public class ImageView extends VerticalLayout {
                 .set("border-radius", "12px")
                 .set("box-shadow", "0 1px 3px rgba(0,0,0,0.1)");
 
-        com.vaadin.flow.component.html.Image image = new com.vaadin.flow.component.html.Image(generateResource(img), "uploaded");
-        image.getStyle()
-                .set("width", "100%")
-                .set("height", "100%")
-                .set("object-fit", "cover");
+        DragSource<Div> dragSource = DragSource.create(container);
+        dragSource.setDraggable(true);
+        dragSource.addDragStartListener(e -> {
+            container.getStyle().set("opacity", "0.4");
+            this.draggedImage = img; 
+        });
+        dragSource.addDragEndListener(e -> container.getStyle().set("opacity", "1"));
 
-        // Action Overlay (Hidden by default, shown on hover)
+        DropTarget<Div> dropTarget = DropTarget.create(container);
+        dropTarget.addDropListener(e -> {
+            if (draggedImage != null && draggedImage != img) {
+                reorderImages(draggedImage, img);
+            }
+        });
+
+        com.vaadin.flow.component.html.Image image = new com.vaadin.flow.component.html.Image(generateResource(img), "uploaded");
+        image.getStyle().set("width", "100%").set("height", "100%").set("object-fit", "cover");
+
         HorizontalLayout actionsOverlay = new HorizontalLayout();
         actionsOverlay.getStyle()
                 .set("position", "absolute")
                 .set("top", "8px")
                 .set("right", "8px")
                 .set("z-index", "1")
-                .set("opacity", "0.6")
+                .set("opacity", "0")
                 .set("transition", "opacity 0.2s ease-in-out");
         
         Icon heartIcon = img.isFavorite() ? VaadinIcon.HEART.create() : VaadinIcon.HEART_O.create();
@@ -256,10 +323,9 @@ public class ImageView extends VerticalLayout {
         actionsOverlay.add(favBtn, deleteBtn);
         container.add(image, actionsOverlay);
         
-        // Use JS to handle the hover state for the overlay
         container.getElement().executeJs(
             "this.addEventListener('mouseenter', () => this.querySelector('vaadin-horizontal-layout').style.opacity = '1');" +
-            "this.addEventListener('mouseleave', () => this.querySelector('vaadin-horizontal-layout').style.opacity = '0.6');"
+            "this.addEventListener('mouseleave', () => this.querySelector('vaadin-horizontal-layout').style.opacity = '0');"
         );
 
         return container;
@@ -268,7 +334,7 @@ public class ImageView extends VerticalLayout {
     private Component createUploadedFileRow(Image img) {
         HorizontalLayout row = new HorizontalLayout();
         row.setWidthFull();
-        row.setAlignItems(Alignment.CENTER);
+        row.setAlignItems(FlexComponent.Alignment.CENTER);
         row.getStyle()
                 .set("background", "#ffffff")
                 .set("border", "1px solid #f3f4f6")
@@ -277,13 +343,11 @@ public class ImageView extends VerticalLayout {
                 .set("margin-bottom", "8px");
 
         com.vaadin.flow.component.html.Image thumb = new com.vaadin.flow.component.html.Image(generateResource(img), "thumb");
-        thumb.setWidth("45px");
-        thumb.setHeight("45px");
+        thumb.setWidth("45px"); thumb.setHeight("45px");
         thumb.getStyle().set("object-fit", "cover").set("border-radius", "6px");
 
         VerticalLayout details = new VerticalLayout();
-        details.setSpacing(false);
-        details.setPadding(false);
+        details.setSpacing(false); details.setPadding(false);
         
         Span fileName = new Span(formatDisplayName(img.getFileName()));
         fileName.getStyle().set("font-weight", "600");
@@ -292,7 +356,6 @@ public class ImageView extends VerticalLayout {
         statusText.getStyle().set("color", "#2563eb").set("font-size", "0.7rem").set("font-weight", "800");
 
         details.add(fileName, statusText);
-
         Icon successIcon = VaadinIcon.CHECK_CIRCLE.create();
         successIcon.getStyle().set("color", "#2563eb").set("margin-left", "auto");
 
@@ -331,13 +394,6 @@ public class ImageView extends VerticalLayout {
             try { return new FileInputStream(img.getFilePath()); } 
             catch (Exception e) { return InputStream.nullInputStream(); }
         });
-    }
-
-    private void setupEmptyState() {
-        emptyStateCard.removeAll();
-        emptyTitle.setText(activeFilter == GalleryFilter.FAVORITES ? "No favorites yet" : "No images found");
-        emptyStateCard.add(new Icon(VaadinIcon.PICTURE), emptyTitle);
-        emptyStateCard.setAlignItems(Alignment.CENTER);
     }
 
     private String formatDisplayName(String fileName) {

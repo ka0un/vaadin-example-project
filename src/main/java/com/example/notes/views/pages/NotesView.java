@@ -15,9 +15,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.security.AuthenticationContext;
-import org.springframework.security.core.userdetails.UserDetails;
-
 import jakarta.annotation.security.PermitAll;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Route(value = "", layout = MainLayout.class)
 @PageTitle("Notes | Vaadin Notes App")

@@ -1,8 +1,6 @@
 package com.example.notes.views.pages;
 
-import com.example.notes.data.dto.ImageDto;
 import com.example.notes.data.dto.ImageThumbnailDto;
-import com.example.notes.data.entity.Image;
 import com.example.notes.data.entity.User;
 import com.example.notes.data.repository.UserRepository;
 import com.example.notes.service.ImageService;
@@ -11,30 +9,22 @@ import com.example.notes.views.components.ImageDialog;
 import com.example.notes.views.layouts.MainLayout;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.security.AuthenticationContext;
-import jakarta.persistence.EntityNotFoundException;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import jakarta.annotation.security.PermitAll;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import jakarta.annotation.security.PermitAll;
-
-import java.io.IOException;
-import java.nio.file.AccessDeniedException;
 import java.util.ArrayList;
 import java.util.List;
 

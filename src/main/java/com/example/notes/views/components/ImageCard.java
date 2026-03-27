@@ -1,9 +1,7 @@
 package com.example.notes.views.components;
 
 import com.example.notes.data.dto.ImageThumbnailDto;
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.server.StreamResource;
 import org.checkerframework.checker.nullness.qual.NonNull;
 

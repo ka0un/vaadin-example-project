@@ -1,6 +1,5 @@
 package com.example.notes.views.components;
 
-import com.example.notes.data.dto.ImageThumbnailDto;
 import com.example.notes.service.ImageService;
 import com.flowingcode.vaadin.addons.imagecrop.ImageCrop;
 import com.vaadin.flow.component.button.Button;
@@ -16,9 +15,7 @@ import com.vaadin.flow.server.VaadinSession;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.springframework.core.io.Resource;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Base64;
 
 public class ImageCropComponent extends Dialog {
@@ -66,7 +63,7 @@ public class ImageCropComponent extends Dialog {
         Button getCropButton = new Button("Get Cropped Image");
 
         croppedResultDiv.setId("result-cropped-image-div");
-        croppedResultDiv.setHeight("250px");
+        croppedResultDiv.setMinHeight("250px");
 
         getCropButton.addClickListener(e -> {
             croppedResultDiv.removeAll();

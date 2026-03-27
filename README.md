@@ -158,3 +158,20 @@ vaadin-example-project/
 ## Image Gallery
 
 Requirement: Build an interface where users can easily upload images and display them beautifully in a gallery format.
+
+### Feature Overview
+
+This feature branch adds a complete image gallery workflow to the Notes application rather than just a simple upload form. A new gallery page is now available from the main navigation, giving authenticated users a dedicated place to manage their personal image collection alongside their notes.
+
+Users can upload `png`, `jpg`, and `jpeg` files through the gallery interface. On the backend, each upload is validated, stored on disk, and registered in the database with metadata such as file name, format, size, resolution, upload time, and ownership. Thumbnail versions are also generated so the gallery can load faster and present images in a cleaner grid layout.
+
+The gallery itself supports a more polished browsing experience. Images are displayed in a responsive card-based grid, and users can refine what they see with format filters and sorting options such as newest first, oldest first, largest first, and smallest first. Selecting an image opens a detailed preview dialog where users can move between images, inspect metadata, delete images, and crop them directly inside the application.
+
+From an implementation perspective, this branch introduces the core gallery view, reusable UI components for image cards and dialogs, image-specific DTOs and entities, repository support, and service-layer logic for saving, loading, updating, and deleting image assets in a way that is scoped to the currently authenticated user.
+
+### Screenshots
+
+- [Gallery overview](./screenshots/01.png) shows the [main image gallery page](http://localhost:8080/gallery) with the card-based layout used to browse uploaded images.
+- [Upload dialog](./screenshots/02.png) shows the upload flow where users can add a new image to their personal gallery.
+- [Image details dialog](./screenshots/03.png) shows the full preview experience, including image metadata and gallery actions.
+- [Crop workflow](./screenshots/04.png) shows the in-app cropping tool used to adjust an image after it has been uploaded.

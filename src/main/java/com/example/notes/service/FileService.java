@@ -16,10 +16,8 @@ public class FileService {
 
     public void saveFiles(byte[] imageBytes, File originalFile, File thumbFile) throws IOException {
 
-        // Save original
         Files.write(originalFile.toPath(), imageBytes);
 
-        // Create thumbnail (always JPG for consistency & size)
         Thumbnails.of(new ByteArrayInputStream(imageBytes))
                 .size(300, 300)
                 .outputFormat("jpg")
@@ -38,7 +36,6 @@ public class FileService {
 
         String format = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
 
-        // Allow only safe formats
         if (!List.of("jpg", "jpeg", "png", "webp").contains(format)) {
             throw new IllegalArgumentException("Unsupported file format");
         }

@@ -31,21 +31,18 @@ public class ImageCard extends Div{
                 .set("border-radius", "12px")
                 .set("cursor", "pointer");
 
-        // Image
         com.vaadin.flow.component.html.Image image = getImage(img);
 
         image.getStyle()
                 .set("object-fit", "cover")
-                .set("transition", "transform 0.3s ease"); // smooth animation
+                .set("transition", "transform 0.3s ease");
 
-        // 🔥 Hover effect (zoom)
         this.getElement().addEventListener("mouseover",
                 e -> image.getStyle().set("transform", "scale(1.08)"));
 
         this.getElement().addEventListener("mouseout",
                 e -> image.getStyle().set("transform", "scale(1)"));
 
-        // 🔥 Click → open dialog
         this.addClickListener(e -> openImageDialog.run());
 
         this.add(image);

@@ -35,6 +35,7 @@ import jakarta.annotation.security.PermitAll;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Route(value = "gallery", layout = MainLayout.class)
@@ -47,6 +48,8 @@ public class GalleryView extends VerticalLayout {
     private final User currentUser;
     List<ImageThumbnailDto> images;
     private int currentIndex = -1;
+    private String format = "all";
+    private int sort = 0;
 
     private final Div galleryContainer = new Div();
 
@@ -84,39 +87,39 @@ public class GalleryView extends VerticalLayout {
             openUploadDialog();
         });
 
-        // 🔹 Format filter
         ComboBox<String> formatFilter = new ComboBox<>();
-        formatFilter.setItems("jpg", "jpeg", "png");
+        formatFilter.setItems("All","jpg", "jpeg", "png");
         formatFilter.setPlaceholder("Image Format");
-        formatFilter.setClearButtonVisible(true);
+        formatFilter.setClearButtonVisible(false);
+        formatFilter.setAllowCustomValue(false);
 
         formatFilter.addValueChangeListener(e -> {
-            // TODO: filter logic
+            format = e.getValue();
+            refreshGallery();
         });
 
-        // 🔹 Sort combo
         ComboBox<String> sortBy = new ComboBox<>();
-        sortBy.setItems("Size", "Uploaded Date");
+        List<String> list =  new ArrayList<>(List.of("Newest to Oldest","Oldest to Newest","Largest to Smallest","Smallest to Largest"));
+        sortBy.setItems(list);
         sortBy.setPlaceholder("Sort By");
+        sortBy.setClearButtonVisible(false);
+        sortBy.setAllowCustomValue(false);
 
         sortBy.addValueChangeListener(e -> {
-            // TODO: sorting logic
+            sort = list.indexOf(e.getValue());
+            refreshGallery();
         });
 
-        // 🔹 Right side container
         HorizontalLayout rightControls = new HorizontalLayout(formatFilter, sortBy);
         rightControls.setSpacing(true);
 
-        // 🔹 Main toolbar
         HorizontalLayout toolbar = new HorizontalLayout(addButton, rightControls);
         toolbar.setWidthFull();
         toolbar.setAlignItems(Alignment.CENTER);
         toolbar.expand(rightControls); // pushes controls to right
 
-        // 🔹 Responsive behavior
         toolbar.getStyle().set("flex-wrap", "wrap");
 
-        // Make children responsive
         addButton.getStyle().set("flex-grow", "0");
 
         rightControls.getStyle()
@@ -126,7 +129,6 @@ public class GalleryView extends VerticalLayout {
                 .set("justify-content", "flex-end")
                 .set("flex-grow", "1");
 
-        // 🔹 Mobile tweak (stack vertically)
         toolbar.getElement().executeJs("""
         const toolbar = this;
         function updateLayout() {
@@ -156,7 +158,6 @@ public class GalleryView extends VerticalLayout {
         dialog.open();
     }
 
-    // 🔹 Upload section
     private Component createUploadSection(Dialog dialog) {
 
         MemoryBuffer buffer = new MemoryBuffer();
@@ -178,8 +179,8 @@ public class GalleryView extends VerticalLayout {
                         currentUser
                 );
 
-                dialog.close();          // 🔹 close immediately after upload
-                refreshGallery();        // 🔹 refresh UI
+                dialog.close();
+                refreshGallery();
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -195,7 +196,6 @@ public class GalleryView extends VerticalLayout {
         return upload;
     }
 
-    // 🔹 Gallery section
     private Component createGallerySection() {
 
         galleryContainer.getStyle().set("display", "grid");
@@ -206,12 +206,11 @@ public class GalleryView extends VerticalLayout {
         return galleryContainer;
     }
 
-    // 🔹 Refresh gallery
     private void refreshGallery() {
 
         galleryContainer.removeAll();
 
-        images = imageService.getAllImagesByUser();
+        images = imageService.getAllImagesByUser(format,sort);
 
         for (ImageThumbnailDto img : images) {
             galleryContainer.add(new ImageCard(img, () -> openImageDialog(images.indexOf(img))));

@@ -138,6 +138,114 @@ vaadin-example-project/
 
 ---
 
+13. [Image Gallery Feature](#image-gallery-feature)
+
+---
+
+## Image Gallery Feature
+
+The application includes a beautiful, responsive **Image Gallery** where you can upload, search, preview, download, and organise your images with a favourites section.
+
+---
+
+### Getting to the Gallery
+
+1. **Log in** with your username and password.
+2. Click **"Gallery"** in the side navigation drawer.
+
+---
+
+### Uploading Images
+
+- Use the **Upload** area at the top of the gallery page.
+- Drag-and-drop or click to choose **multiple images at once**.
+- Supported formats: **JPEG**, **PNG**, **GIF** — maximum **5 MB per file**.
+- Once all files finish uploading, the upload area clears automatically and the gallery refreshes.
+
+---
+
+### Gallery Tabs
+
+The gallery is split into two tabs for easy organisation:
+
+| Tab | What it shows |
+|-----|--------------|
+| 🖼 **All Images** | Every image you have uploaded |
+| ❤ **Favourites** | Only images you have marked as a favourite |
+
+A counter at the top of the page shows your total image count and how many you have favourited, e.g. `Total: 8 images · 3 ❤`.
+
+---
+
+### Searching Images
+
+- A **Search bar** is displayed at the top of the **All Images** tab.
+- Type any part of a filename to filter images in real time.
+- The search ignores case (e.g., "photo" matches "Photo.jpg").
+- The search bar is automatically cleared when you upload a new image so the new image is always visible.
+
+---
+
+### Previewing Images (Lightbox)
+
+Click any image thumbnail to open the **full-size preview popup** (lightbox). Inside the lightbox you can:
+
+| Control | Description |
+|---------|-------------|
+| **◀ / ▶ arrows** | Navigate to the previous / next image in the current tab |
+| **✕ (Close)** | Close the preview popup |
+| **❤ Favourite** | Toggle the image as a favourite (turns red when active) |
+| **⬇ Download** | Download the original image file to your device |
+
+A position indicator in the title bar shows where you are (e.g., **"photo.jpg (3 / 8)"**).
+
+---
+
+### Image Metadata
+
+The bottom bar of the lightbox displays detailed metadata for each image:
+
+| Field | Example |
+|-------|---------|
+| 📅 Upload date | Mar 27, 2026 16:45 |
+| 📁 File size | 234 KB |
+| 🖼 Resolution | 1920×1080 |
+
+> **Note:** Metadata is recorded automatically when you upload an image. Images uploaded before this feature was added will show "Unknown" for size and resolution; re-upload them to populate those values.
+
+---
+
+### Favourites
+
+- Open any image in the lightbox and click the **❤ button** to mark it as a favourite.
+- The heart turns **red** when active, and a **red heart badge** appears on the thumbnail in the gallery grid.
+- Switch to the **Favourites** tab to see only your favourited images in one place.
+- Clicking an image inside the Favourites tab keeps navigation scoped only to your favourites.
+
+---
+
+### Deleting Images
+
+- Each thumbnail has a **🗑 Trash** button in the top-right corner.
+- Click it to permanently delete the image. The gallery updates immediately.
+
+---
+
+### Key Implementation Details
+
+| Component | Role |
+|-----------|------|
+| `ImageUploadComponent` | Wraps Vaadin's `Upload`; handles file type validation, size limits (5 MB), and auto-clearing |
+| `ImageGalleryItem` | Single image card with thumbnail, delete button, and favourite badge |
+| `ImageGalleryView` | Main view with tab navigation, search toolbar, lightbox dialog, and metadata display |
+| `ImageService` | Business logic: save with metadata extraction (`ImageIO`), toggle favourites, filtered search |
+| `ImageRepository` | Spring Data JPA queries: by user, by name filter, by favourite status, and count |
+| `Image` (entity) | Stores binary data (`BLOB`) plus `uploadDate`, `fileSize`, `width`, `height`, `favorite` |
+
+Images are stored **per user** in the database, so each user has their own private gallery.
+
+---
+
 ## Common Issues / Troubleshooting
 
 ### 1. `The JAVA_HOME environment variable is not defined correctly`
@@ -154,3 +262,7 @@ vaadin-example-project/
 ### 3. Changes don't appear in the browser
 **What it means:** Sometimes your browser caches older files.
 **How to fix:** Try completely refreshing the page (`Ctrl + F5` on Windows, `Cmd + Shift + R` on Mac). If that doesn't help, restart the server by pressing `Ctrl+C` in your terminal and running the `spring-boot:run` command again.
+
+### 4. Image metadata shows "Unknown"
+**What it means:** The image was uploaded before the metadata feature was added, so the database row has no size or resolution recorded.
+**How to fix:** Delete the image from the gallery and re-upload it. The new upload will record all metadata automatically.

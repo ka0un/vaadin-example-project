@@ -1,9 +1,10 @@
-package com.example.notes.views;
+package com.example.notes.views.pages;
 
 import com.example.notes.data.entity.Note;
 import com.example.notes.data.entity.User;
 import com.example.notes.data.repository.UserRepository;
 import com.example.notes.service.NoteService;
+import com.example.notes.views.layouts.MainLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Span;

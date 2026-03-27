@@ -1,6 +1,6 @@
 package com.example.notes.security;
 
-import com.example.notes.views.LoginView;
+import com.example.notes.views.pages.LoginView;
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

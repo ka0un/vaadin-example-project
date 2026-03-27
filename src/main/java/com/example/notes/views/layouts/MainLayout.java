@@ -1,9 +1,10 @@
-package com.example.notes.views;
+package com.example.notes.views.layouts;
 
+import com.example.notes.views.pages.GalleryView;
+import com.example.notes.views.pages.NotesView;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;

@@ -25,7 +25,7 @@
   symbol:   variable super
   location: class com.example.notes.security.SecurityConfig
 [ERROR] /C:/Users/givem/OneDrive/Desktop/vaadin-example-project/src/main/java/com/example/notes/security/SecurityConfig.java:[23,9] cannot find symbol
-  symbol:   method setLoginView(org.springframework.security.config.annotation.web.builders.HttpSecurity,java.lang.Class<com.example.notes.views.LoginView>)
+  symbol:   method setLoginView(org.springframework.security.config.annotation.web.builders.HttpSecurity,java.lang.Class<com.example.notes.views.pages.LoginView>)
   location: class com.example.notes.security.SecurityConfig
 [INFO] 5 errors 
 [INFO] -------------------------------------------------------------
@@ -46,7 +46,7 @@
 [ERROR]   symbol:   variable super
 [ERROR]   location: class com.example.notes.security.SecurityConfig
 [ERROR] /C:/Users/givem/OneDrive/Desktop/vaadin-example-project/src/main/java/com/example/notes/security/SecurityConfig.java:[23,9] cannot find symbol
-[ERROR]   symbol:   method setLoginView(org.springframework.security.config.annotation.web.builders.HttpSecurity,java.lang.Class<com.example.notes.views.LoginView>)
+[ERROR]   symbol:   method setLoginView(org.springframework.security.config.annotation.web.builders.HttpSecurity,java.lang.Class<com.example.notes.views.pages.LoginView>)
 [ERROR]   location: class com.example.notes.security.SecurityConfig
 [ERROR] -> [Help 1]
 [ERROR] 

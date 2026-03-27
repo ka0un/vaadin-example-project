@@ -39,28 +39,67 @@ import java.awt.RenderingHints;
 public class ImageService {
 
     private final ImageRepository imageRepository;
+    private final FileService fileService;
 
     private final String uploadDir = "uploads/";
     private final UserRepository userRepository;
 
-    public ImageService(ImageRepository imageRepository, UserRepository userRepository) {
+    public ImageService(ImageRepository imageRepository, UserRepository userRepository,  FileService fileService) {
         this.imageRepository = imageRepository;
         this.userRepository = userRepository;
+        this.fileService = fileService;
     }
 
-    @Transactional
     public void saveImage(String fileName, InputStream inputStream, long fileSize, User user) throws IOException {
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        inputStream.transferTo(baos);
-        byte[] imageBytes = baos.toByteArray();
+        // 1. Validate file name
+        String format = fileService.extractAndValidateFormat(fileName);
 
+        // 2. Read into memory (you can later optimize this)
+        byte[] imageBytes = inputStream.readAllBytes();
+
+        // 3. Validate image content
         BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
+        if (originalImage == null) {
+            throw new IllegalArgumentException("Invalid image file");
+        }
+
         int width = originalImage.getWidth();
         int height = originalImage.getHeight();
 
-        String format = fileName.substring(fileName.lastIndexOf('.') + 1);
         Long id = generateSecureRandomId();
+
+        File directory = new File(uploadDir);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+
+        File originalFile = new File(uploadDir + id + "." + format);
+        File thumbFile = new File(uploadDir + id + "_thumb.jpg"); // always jpg for thumbnails
+
+        try {
+            // 4. Save files FIRST
+            fileService.saveFiles(imageBytes, originalFile, thumbFile);
+
+            // 5. Save DB (transactional)
+            saveImageToDatabase(id, fileName, fileSize, format, width, height, user);
+
+        } catch (Exception e) {
+            // 6. Cleanup if anything fails
+            fileService.deleteFileIfExists(originalFile);
+            fileService.deleteFileIfExists(thumbFile);
+            throw e;
+        }
+    }
+
+    @Transactional
+    public void saveImageToDatabase(Long id,
+                                    String fileName,
+                                    long fileSize,
+                                    String format,
+                                    int width,
+                                    int height,
+                                    User user) {
 
         Image image = new Image();
         image.setId(id);
@@ -72,23 +111,9 @@ public class ImageService {
         image.setUploadTime(LocalDateTime.now());
         image.setUser(user);
 
-        File directory = new File(uploadDir);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-        File targetFile = new File(uploadDir + id + "." + format);
-        Files.write(targetFile.toPath(), imageBytes);
-
-        String thumbPath = uploadDir + id + "_thumb." + format;
-
-        Thumbnails.of(new ByteArrayInputStream(imageBytes))
-                .size(300, 300) // auto keeps aspect ratio
-                .toFile(new File(thumbPath));
-
         imageRepository.save(image);
     }
 
-    @Transactional
     public void deleteImage(Long id, User user) throws IOException {
 
         Image img = imageRepository.findById(id)
@@ -98,26 +123,22 @@ public class ImageService {
             throw new AccessDeniedException("Access denied");
         }
 
-        Files.deleteIfExists(Paths.get(uploadDir).resolve(String.valueOf(id)+"."+img.getFormat()));
-        Files.deleteIfExists(Paths.get(uploadDir).resolve(String.valueOf(id)+"_thumb."+img.getFormat()));
+        deleteImageFromDatabase(img);
 
+        fileService.deleteFileIfExists(Paths.get(uploadDir).resolve(String.valueOf(id)+"."+img.getFormat()).toFile());
+        fileService.deleteFileIfExists(Paths.get(uploadDir).resolve(String.valueOf(id)+"_thumb."+img.getFormat()).toFile());
+
+
+    }
+
+    @Transactional
+    protected void deleteImageFromDatabase(Image img) throws IOException {
         imageRepository.delete(img);
     }
 
-    public ImageDto getImageForUser(Long id){
+    public ImageDto getImageForUser(Long id) throws Exception {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        UserDetails springUser = (UserDetails) authentication.getPrincipal();
-        com.example.notes.data.entity.User loggedUser = userRepository.findByUsername(springUser.getUsername())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-        Image img = imageRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-        if (!img.getUser().getId().equals(loggedUser.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
+        Image img = authorize(id);
 
         Path path = Paths.get(uploadDir).resolve(id +"."+ img.getFormat());
 
@@ -160,6 +181,65 @@ public class ImageService {
         return thumbnails;
     }
 
+    public void updateImage(Long imageId, byte[] imageBytes) throws Exception {
+
+        // 1. Authorization
+        Image existingImage = authorize(imageId);
+
+        // 2. Validate image
+        BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
+        if (bufferedImage == null) {
+            throw new IllegalArgumentException("Invalid image data");
+        }
+
+        int width = bufferedImage.getWidth();
+        int height = bufferedImage.getHeight();
+
+        String format = existingImage.getFormat(); // keep same format
+
+        File directory = new File(uploadDir);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+
+        // OLD FILES
+        File oldOriginal = new File(uploadDir + imageId + "." + format);
+        File oldThumb = new File(uploadDir + imageId + "_thumb.jpg");
+
+        // TEMP FILES (important!)
+        File newOriginal = new File(uploadDir + imageId + "_new." + format);
+        File newThumb = new File(uploadDir + imageId + "_thumb_new.jpg");
+
+        try {
+            // 3. Save new files FIRST (temp)
+            fileService.saveFiles(imageBytes, newOriginal, newThumb);
+
+            // 4. Update DB (transactional)
+            updateImageMetadata(existingImage, width, height, imageBytes.length);
+
+            // 5. Replace files (atomic-ish)
+            fileService.moveFiles(newOriginal.toPath(), oldOriginal.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            fileService.moveFiles(newThumb.toPath(), oldThumb.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+        } catch (Exception e) {
+            // Cleanup temp files
+            fileService.deleteFileIfExists(newOriginal);
+            fileService.deleteFileIfExists(newThumb);
+            throw e;
+        }
+    }
+
+    @Transactional
+    public void updateImageMetadata(Image image, int width, int height, long fileSize) {
+
+        image.setWidth(width);
+        image.setHeight(height);
+        image.setFileSize(fileSize);
+        image.setUploadTime(LocalDateTime.now());
+
+        imageRepository.save(image);
+    }
+
     private static final SecureRandom random = new SecureRandom();
 
     private Long generateSecureRandomId() {
@@ -168,5 +248,22 @@ public class ImageService {
             id = Math.abs(random.nextLong());
         } while (id < 1_000_000_000L || imageRepository.existsById(id));
         return id;
+    }
+
+    private Image authorize(Long imageId) throws ResponseStatusException {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        UserDetails springUser = (UserDetails) authentication.getPrincipal();
+        com.example.notes.data.entity.User loggedUser = userRepository.findByUsername(springUser.getUsername())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        Image img = imageRepository.findById(imageId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        if (!img.getUser().getId().equals(loggedUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        return img;
     }
 }

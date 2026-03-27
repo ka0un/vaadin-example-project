@@ -31,3 +31,12 @@
         gap: 20px;
     }
 }
+
+.my-cropper img {
+    max-height: 250px !important;
+    height: auto !important;
+}
+
+.my-cropper {
+    max-height: 250px;
+}

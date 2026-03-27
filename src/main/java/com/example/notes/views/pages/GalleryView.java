@@ -77,6 +77,8 @@ public class GalleryView extends VerticalLayout {
         Upload upload = new Upload(buffer);
 
         upload.setAcceptedFileTypes("image/png", "image/jpeg", "image/jpg");
+        int maxFileSizeInBytes = 10 * 1024 * 1024;
+        upload.setMaxFileSize(maxFileSizeInBytes);
         upload.setMaxFiles(1);
 
         upload.addSucceededListener(event -> {

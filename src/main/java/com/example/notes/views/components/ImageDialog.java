@@ -17,6 +17,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.server.StreamResource;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.core.io.Resource;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
@@ -29,6 +30,7 @@ public class ImageDialog extends Dialog {
     private final ImageService imageService;
     private final User currentUser;
     private final Runnable refreshGallery;
+    private com.vaadin.flow.component.html.Image image;
 
     public ImageDialog(List<ImageThumbnailDto> images,
                        int startIndex,
@@ -53,7 +55,13 @@ public class ImageDialog extends Dialog {
         ImageThumbnailDto imageThumbnailDto = images.get(currentIndex);
         Long imageId = imageThumbnailDto.getId();
 
-        ImageDto imageDto = imageService.getImageForUser(imageId);
+        ImageDto imageDto = null;
+        try {
+            imageDto = imageService.getImageForUser(imageId);
+        } catch (Exception e) {
+            Notification.show("Image not found or Unauthorized Access");
+            return;
+        }
         Image imageEntity = imageDto.getImage();
 
         Div mainDiv = new Div();
@@ -69,7 +77,7 @@ public class ImageDialog extends Dialog {
                 .setBackgroundColor("white")
                 .set("max-width", "300px");
 
-        VerticalLayout metaAndActionsLayout = new VerticalLayout(addMetaData(imageEntity), addActionButtons(imageEntity.getId()));
+        VerticalLayout metaAndActionsLayout = new VerticalLayout(addMetaData(imageEntity), addActionButtons(imageEntity.getId(),imageDto.getImageResource()));
 
         divB.add(metaAndActionsLayout);
 
@@ -158,8 +166,6 @@ public class ImageDialog extends Dialog {
 
     private com.vaadin.flow.component.html.Image addImage(ImageDto imageDto){
 
-        com.vaadin.flow.component.html.Image image;
-
         if(imageDto.getImageResource() == null) {
 
             image = new com.vaadin.flow.component.html.Image("/Image-not-found.png", "No Image Found");
@@ -202,7 +208,7 @@ public class ImageDialog extends Dialog {
         return meta;
     }
 
-    private HorizontalLayout addActionButtons(Long imageEntityId){
+    private HorizontalLayout addActionButtons(Long imageEntityId, Resource imageResource) {
         Button cropBtn = new Button("Crop");
         Button deleteBtn = new Button("Delete");
 
@@ -228,6 +234,19 @@ public class ImageDialog extends Dialog {
             } catch (Exception ex) {
                 Notification.show("Unexpected error occurred.");
             }
+        });
+
+        //crop button
+        cropBtn.addClickListener(e -> {
+            Dialog dialog = new ImageCropComponent(imageEntityId,imageResource,imageService);
+            dialog.addOpenedChangeListener(event -> {
+                if (!event.isOpened()) {
+
+                    this.close();
+                    refreshGallery.run();
+                }
+            });
+            dialog.open();
         });
 
         HorizontalLayout actions = new HorizontalLayout(cropBtn, deleteBtn);

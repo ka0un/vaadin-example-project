@@ -4,6 +4,7 @@ import com.example.notes.data.entity.Note;
 import com.example.notes.data.entity.User;
 import com.example.notes.data.repository.NoteRepository;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service

@@ -14,6 +14,13 @@ target/
 .springBeans
 .sts4-cache
 
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
 ### IntelliJ IDEA ###
 .idea
 *.iws
@@ -40,3 +47,5 @@ build/
 /src/main/frontend/generated/
 /frontend/generated/
 /src/main/bundles/
+
+uploads/

@@ -21,6 +21,7 @@ import org.springframework.core.io.Resource;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class ImageDialog extends Dialog {
@@ -48,7 +49,7 @@ public class ImageDialog extends Dialog {
     }
 
     private void buildUI() {
-        removeAll(); // important when navigating
+        removeAll();
 
         if (currentIndex < 0 || currentIndex >= images.size()) return;
 
@@ -150,7 +151,7 @@ public class ImageDialog extends Dialog {
             navBar.add(leftBtn);
         }
 
-        navBar.add(spacer); // always present
+        navBar.add(spacer);
 
         if (hasNext) {
             rightBtn.addClickShortcut(Key.ARROW_RIGHT);
@@ -197,11 +198,16 @@ public class ImageDialog extends Dialog {
     }
 
     private VerticalLayout addMetaData(Image imageEntity){
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy HH:mm");
+        String formattedDate = imageEntity.getUploadTime().format(formatter);
+
         VerticalLayout meta = new VerticalLayout(
                 createMetaRow("Name", imageEntity.getFileName()),
                 createMetaRow("Size", formatFileSize(imageEntity.getFileSize())),
                 createMetaRow("Resolution", imageEntity.getWidth() + "x" + imageEntity.getHeight()),
-                createMetaRow("Format", imageEntity.getFormat().toUpperCase())
+                createMetaRow("Format", imageEntity.getFormat().toUpperCase()),
+                createMetaRow("Created At", formattedDate)
         );
         meta.setPadding(false);
 
@@ -236,7 +242,6 @@ public class ImageDialog extends Dialog {
             }
         });
 
-        //crop button
         cropBtn.addClickListener(e -> {
             Dialog dialog = new ImageCropComponent(imageEntityId,imageResource,imageService);
             dialog.addOpenedChangeListener(event -> {

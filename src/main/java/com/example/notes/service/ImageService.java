@@ -11,6 +11,7 @@ import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -52,13 +53,10 @@ public class ImageService {
 
     public void saveImage(String fileName, InputStream inputStream, long fileSize, User user) throws IOException {
 
-        // 1. Validate file name
         String format = fileService.extractAndValidateFormat(fileName);
 
-        // 2. Read into memory (you can later optimize this)
         byte[] imageBytes = inputStream.readAllBytes();
 
-        // 3. Validate image content
         BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
         if (originalImage == null) {
             throw new IllegalArgumentException("Invalid image file");
@@ -75,17 +73,14 @@ public class ImageService {
         }
 
         File originalFile = new File(uploadDir + id + "." + format);
-        File thumbFile = new File(uploadDir + id + "_thumb.jpg"); // always jpg for thumbnails
+        File thumbFile = new File(uploadDir + id + "_thumb.jpg");
 
         try {
-            // 4. Save files FIRST
             fileService.saveFiles(imageBytes, originalFile, thumbFile);
 
-            // 5. Save DB (transactional)
             saveImageToDatabase(id, fileName, fileSize, format, width, height, user);
 
         } catch (Exception e) {
-            // 6. Cleanup if anything fails
             fileService.deleteFileIfExists(originalFile);
             fileService.deleteFileIfExists(thumbFile);
             throw e;
@@ -126,7 +121,7 @@ public class ImageService {
         deleteImageFromDatabase(img);
 
         fileService.deleteFileIfExists(Paths.get(uploadDir).resolve(String.valueOf(id)+"."+img.getFormat()).toFile());
-        fileService.deleteFileIfExists(Paths.get(uploadDir).resolve(String.valueOf(id)+"_thumb."+img.getFormat()).toFile());
+        fileService.deleteFileIfExists(Paths.get(uploadDir).resolve(String.valueOf(id)+"_thumb.jpg").toFile());
 
 
     }
@@ -153,20 +148,35 @@ public class ImageService {
         return new ImageDto(img, resource);
     }
 
-    public List<ImageThumbnailDto> getAllImagesByUser() {
+    public List<ImageThumbnailDto> getAllImagesByUser(String format, int sortBy) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetails springUser = (UserDetails) authentication.getPrincipal();
 
-        com.example.notes.data.entity.User loggedUser =
-                userRepository.findByUsername(springUser.getUsername())
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        User loggedUser = userRepository.findByUsername(springUser.getUsername())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        List<Image> images = imageRepository.findByUser(loggedUser);
+        Sort sort = switch (sortBy) {
+            case 1 -> Sort.by("uploadTime").ascending();
+            case 2 -> Sort.by("fileSize").descending();
+            case 3 -> Sort.by("fileSize").ascending();
+            default -> Sort.by("uploadTime").descending();
+        };
+
+        List<Image> images;
+
+        if (format == null || format.equalsIgnoreCase("all")) {
+            images = imageRepository.findByUser(loggedUser, sort);
+        } else {
+            images = imageRepository.findByUserAndFormatIgnoreCase(loggedUser, format, sort);
+        }
+
         List<ImageThumbnailDto> thumbnails = new ArrayList<>();
 
         for (Image img : images) {
-            Path thumbPath = Paths.get(uploadDir).resolve(img.getId() + "_thumb." + img.getFormat());
+            Path thumbPath = Paths.get(uploadDir)
+                    .resolve(img.getId() + "_thumb.jpg");
+
             Resource resource = null;
 
             if (Files.exists(thumbPath)) {
@@ -183,10 +193,8 @@ public class ImageService {
 
     public void updateImage(Long imageId, byte[] imageBytes) throws Exception {
 
-        // 1. Authorization
         Image existingImage = authorize(imageId);
 
-        // 2. Validate image
         BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
         if (bufferedImage == null) {
             throw new IllegalArgumentException("Invalid image data");
@@ -195,34 +203,29 @@ public class ImageService {
         int width = bufferedImage.getWidth();
         int height = bufferedImage.getHeight();
 
-        String format = existingImage.getFormat(); // keep same format
+        String format = existingImage.getFormat();
 
         File directory = new File(uploadDir);
         if (!directory.exists()) {
             directory.mkdirs();
         }
 
-        // OLD FILES
         File oldOriginal = new File(uploadDir + imageId + "." + format);
         File oldThumb = new File(uploadDir + imageId + "_thumb.jpg");
 
-        // TEMP FILES (important!)
         File newOriginal = new File(uploadDir + imageId + "_new." + format);
         File newThumb = new File(uploadDir + imageId + "_thumb_new.jpg");
 
         try {
-            // 3. Save new files FIRST (temp)
             fileService.saveFiles(imageBytes, newOriginal, newThumb);
 
-            // 4. Update DB (transactional)
             updateImageMetadata(existingImage, width, height, imageBytes.length);
 
-            // 5. Replace files (atomic-ish)
             fileService.moveFiles(newOriginal.toPath(), oldOriginal.toPath(), StandardCopyOption.REPLACE_EXISTING);
             fileService.moveFiles(newThumb.toPath(), oldThumb.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
         } catch (Exception e) {
-            // Cleanup temp files
+
             fileService.deleteFileIfExists(newOriginal);
             fileService.deleteFileIfExists(newThumb);
             throw e;

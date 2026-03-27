@@ -244,6 +244,7 @@ public class ImageDialog extends Dialog {
 
                     this.close();
                     refreshGallery.run();
+                    refreshGallery.run();
                 }
             });
             dialog.open();

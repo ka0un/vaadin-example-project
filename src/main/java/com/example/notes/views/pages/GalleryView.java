@@ -13,6 +13,7 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
@@ -65,13 +66,98 @@ public class GalleryView extends VerticalLayout {
         setSizeFull();
         setPadding(true);
         setSpacing(true);
-        add(createGallerySection());
+        add(createToolbar(), createGallerySection());
 
         refreshGallery();
+
+    }
+
+    private Component createToolbar() {
+
+        // 🔹 Add button
+        Button addButton = new Button("Add",FontAwesome.Solid.PLUS.create());
+        addButton.getStyle()
+                .set("background-color", "#007bff")
+                .set("color", "white");
+
+        addButton.addClickListener(e -> {
+            openUploadDialog();
+        });
+
+        // 🔹 Format filter
+        ComboBox<String> formatFilter = new ComboBox<>();
+        formatFilter.setItems("jpg", "jpeg", "png");
+        formatFilter.setPlaceholder("Image Format");
+        formatFilter.setClearButtonVisible(true);
+
+        formatFilter.addValueChangeListener(e -> {
+            // TODO: filter logic
+        });
+
+        // 🔹 Sort combo
+        ComboBox<String> sortBy = new ComboBox<>();
+        sortBy.setItems("Size", "Uploaded Date");
+        sortBy.setPlaceholder("Sort By");
+
+        sortBy.addValueChangeListener(e -> {
+            // TODO: sorting logic
+        });
+
+        // 🔹 Right side container
+        HorizontalLayout rightControls = new HorizontalLayout(formatFilter, sortBy);
+        rightControls.setSpacing(true);
+
+        // 🔹 Main toolbar
+        HorizontalLayout toolbar = new HorizontalLayout(addButton, rightControls);
+        toolbar.setWidthFull();
+        toolbar.setAlignItems(Alignment.CENTER);
+        toolbar.expand(rightControls); // pushes controls to right
+
+        // 🔹 Responsive behavior
+        toolbar.getStyle().set("flex-wrap", "wrap");
+
+        // Make children responsive
+        addButton.getStyle().set("flex-grow", "0");
+
+        rightControls.getStyle()
+                .set("display", "flex")
+                .set("gap", "10px")
+                .set("flex-wrap", "wrap")
+                .set("justify-content", "flex-end")
+                .set("flex-grow", "1");
+
+        // 🔹 Mobile tweak (stack vertically)
+        toolbar.getElement().executeJs("""
+        const toolbar = this;
+        function updateLayout() {
+            if (window.innerWidth < 600) {
+                toolbar.style.flexDirection = 'column';
+                toolbar.style.alignItems = 'stretch';
+            } else {
+                toolbar.style.flexDirection = 'row';
+                toolbar.style.alignItems = 'center';
+            }
+        }
+        updateLayout();
+        window.addEventListener('resize', updateLayout);
+    """);
+
+        return toolbar;
+    }
+
+    private void openUploadDialog() {
+        Dialog dialog = new Dialog();
+        dialog.setWidth("50vw");
+        dialog.setHeight("75vh");
+
+        Component uploadComponent = createUploadSection(dialog);
+
+        dialog.add(uploadComponent);
+        dialog.open();
     }
 
     // 🔹 Upload section
-    private Component createUploadSection() {
+    private Component createUploadSection(Dialog dialog) {
 
         MemoryBuffer buffer = new MemoryBuffer();
         Upload upload = new Upload(buffer);
@@ -81,6 +167,8 @@ public class GalleryView extends VerticalLayout {
         upload.setMaxFileSize(maxFileSizeInBytes);
         upload.setMaxFiles(1);
 
+        upload.setDropLabel(new Span("Drag & drop image here"));
+
         upload.addSucceededListener(event -> {
             try {
                 imageService.saveImage(
@@ -89,7 +177,10 @@ public class GalleryView extends VerticalLayout {
                         event.getContentLength(),
                         currentUser
                 );
-                refreshGallery();
+
+                dialog.close();          // 🔹 close immediately after upload
+                refreshGallery();        // 🔹 refresh UI
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -98,7 +189,9 @@ public class GalleryView extends VerticalLayout {
         Button uploadButton = new Button("Upload Image");
         upload.setUploadButton(uploadButton);
 
-        upload.setHeight("350px");
+        upload.setWidthFull();
+        upload.setHeightFull();
+
         return upload;
     }
 
@@ -120,7 +213,6 @@ public class GalleryView extends VerticalLayout {
 
         images = imageService.getAllImagesByUser();
 
-        galleryContainer.add(createUploadSection());
         for (ImageThumbnailDto img : images) {
             galleryContainer.add(new ImageCard(img, () -> openImageDialog(images.indexOf(img))));
         }

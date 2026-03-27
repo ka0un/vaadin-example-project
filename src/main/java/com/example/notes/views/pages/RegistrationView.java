@@ -1,4 +1,4 @@
-package com.example.notes.views;
+package com.example.notes.views.pages;
 
 import com.example.notes.service.UserService;
 import com.vaadin.flow.component.button.Button;

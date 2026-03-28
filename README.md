@@ -1,3 +1,47 @@
+# Image Upload Gallery (Feature Implementation)
+
+##  Developed by: Yasmi Sanjulee
+
+## Feature Overview
+This feature introduces an image upload and gallery system built using Vaadin. Users can upload, view, search, and manage images with a modern and responsive UI.
+
+## ✅ Features
+
+### Core Features
+- Upload images (PNG, JPG, JPEG)
+- Unique file naming using UUID
+- Display images in a gallery layout
+- Delete images with confirmation dialog
+- View images
+### UI Enhancements
+- Card-based modern design
+- Hover animations
+- Gradient background
+- Clean layout and spacing
+
+### Advanced Features
+-  Search/filter images
+-  Image metadata (size, upload time)
+-  Fully responsive design
+-  Multi-image upload
+-  Image preview dialog
+
+### Error Handling
+- File type validation
+- Upload error handling
+- Safe delete operation
+
+---
+
+## How to Use This Feature
+
+1. Run the application
+2. Navigate to:
+   http://localhost:8080/images
+3. Upload images
+4. View, search, and delete images
+
+
 # Notes Application (Vaadin & Spring Boot Project)
 
 Welcome to the **Notes Application**! This is a web application built using **Java**, **Spring Boot**, and **Vaadin**. 

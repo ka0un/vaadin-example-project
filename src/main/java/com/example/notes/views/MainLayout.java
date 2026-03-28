@@ -36,6 +36,11 @@ public class MainLayout extends AppLayout {
     }
 
     private void createDrawer() {
-        addToDrawer(new RouterLink("My Notes", NotesView.class));
+        // We are adding the new Gallery link right below the Notes link
+        addToDrawer(
+                new RouterLink("My Notes", NotesView.class),
+                new RouterLink("Gallery", GalleryView.class)
+        );
     }
+
 }

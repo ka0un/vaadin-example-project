@@ -154,3 +154,12 @@ vaadin-example-project/
 ### 3. Changes don't appear in the browser
 **What it means:** Sometimes your browser caches older files.
 **How to fix:** Try completely refreshing the page (`Ctrl + F5` on Windows, `Cmd + Shift + R` on Mac). If that doesn't help, restart the server by pressing `Ctrl+C` in your terminal and running the `spring-boot:run` command again.
+
+## New Feature: Image Gallery
+Added a secure, componentized, and responsive image upload gallery to the application.
+
+**How to use:**
+1. Log in to the application using standard credentials.
+2. Navigate to the new "Gallery" tab located in the left sidebar drawer.
+3. Use the upload area to select or drag-and-drop an image (JPEG, PNG, GIF supported, max 5MB).
+4. The image will be securely processed, saved to the database, and will instantly render in the responsive gallery grid below.

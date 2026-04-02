@@ -1,9 +1,10 @@
-package com.example.notes.views;
+package com.example.notes.views.pages;
 
 import com.example.notes.data.entity.Note;
 import com.example.notes.data.entity.User;
 import com.example.notes.data.repository.UserRepository;
 import com.example.notes.service.NoteService;
+import com.example.notes.views.layouts.MainLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Span;
@@ -14,9 +15,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.security.AuthenticationContext;
-import org.springframework.security.core.userdetails.UserDetails;
-
 import jakarta.annotation.security.PermitAll;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Route(value = "", layout = MainLayout.class)
 @PageTitle("Notes | Vaadin Notes App")

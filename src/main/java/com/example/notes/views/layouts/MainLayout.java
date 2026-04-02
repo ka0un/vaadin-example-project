@@ -1,14 +1,16 @@
-package com.example.notes.views;
+package com.example.notes.views.layouts;
 
+import com.example.notes.views.pages.GalleryView;
+import com.example.notes.views.pages.NotesView;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.RouterLink;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.spring.security.AuthenticationContext;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 
 public class MainLayout extends AppLayout {
 
@@ -17,11 +19,11 @@ public class MainLayout extends AppLayout {
     public MainLayout(AuthenticationContext authContext) {
         this.authContext = authContext;
         createHeader();
-        createDrawer();
+        createDrawers();
     }
 
     private void createHeader() {
-        H1 logo = new H1("Vaadin Notes App");
+        H3 logo = new H3("Vaadin Notes App");
         logo.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.MEDIUM);
 
         Button logout = new Button("Log out", e -> authContext.logout());
@@ -35,7 +37,8 @@ public class MainLayout extends AppLayout {
         addToNavbar(header);
     }
 
-    private void createDrawer() {
-        addToDrawer(new RouterLink("My Notes", NotesView.class));
+    private void createDrawers() {
+
+        addToDrawer(new RouterLink("My Notes", NotesView.class),new RouterLink("My Gallery", GalleryView.class));
     }
 }

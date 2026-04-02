@@ -18,6 +18,8 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.server.StreamResource;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
@@ -59,8 +61,15 @@ public class ImageDialog extends Dialog {
         ImageDto imageDto = null;
         try {
             imageDto = imageService.getImageForUser(imageId);
-        } catch (Exception e) {
-            Notification.show("Image not found or Unauthorized Access");
+        } catch (ResponseStatusException exception) {
+            showImageLoadError(exception.getStatusCode().equals(HttpStatus.FORBIDDEN)
+                    ? "You are not allowed to view this image."
+                    : "Image not found.");
+            close();
+            return;
+        } catch (IOException exception) {
+            showImageLoadError("Failed to load image.");
+            close();
             return;
         }
         Image imageEntity = imageDto.getImage();
@@ -90,8 +99,6 @@ public class ImageDialog extends Dialog {
         wrapper.setWidthFull();
 
         this.add(wrapper);
-
-        this.open();
     }
 
     private Component createMetaRow(String labelText, String valueText) {
@@ -218,6 +225,11 @@ public class ImageDialog extends Dialog {
         Button cropBtn = new Button("Crop");
         Button deleteBtn = new Button("Delete");
 
+        if (imageResource == null) {
+            cropBtn.setEnabled(false);
+            cropBtn.getElement().setProperty("title", "Crop is unavailable because the image file is missing.");
+        }
+
         deleteBtn.getStyle().set("color", "red");
         deleteBtn.addClickListener(e -> {
             try {
@@ -234,26 +246,24 @@ public class ImageDialog extends Dialog {
             } catch (EntityNotFoundException ex) {
                 Notification.show("Image not found.");
 
-            } catch (IOException ex) {
-                Notification.show("Failed to delete image file.");
-
             } catch (Exception ex) {
                 Notification.show("Unexpected error occurred.");
             }
         });
 
-        cropBtn.addClickListener(e -> {
-            Dialog dialog = new ImageCropComponent(imageEntityId,imageResource,imageService);
-            dialog.addOpenedChangeListener(event -> {
-                if (!event.isOpened()) {
+        if (imageResource != null) {
+            cropBtn.addClickListener(e -> {
+                Dialog dialog = new ImageCropComponent(imageEntityId,imageResource,imageService);
+                dialog.addOpenedChangeListener(event -> {
+                    if (!event.isOpened()) {
 
-                    this.close();
-                    refreshGallery.run();
-                    refreshGallery.run();
-                }
+                        this.close();
+                        refreshGallery.run();
+                    }
+                });
+                dialog.open();
             });
-            dialog.open();
-        });
+        }
 
         HorizontalLayout actions = new HorizontalLayout(cropBtn, deleteBtn);
         actions.getStyle()
@@ -263,6 +273,10 @@ public class ImageDialog extends Dialog {
                 .set("margin-top", "10px");
 
         return actions;
+    }
+
+    private void showImageLoadError(String message) {
+        Notification.show(message);
     }
 
 }

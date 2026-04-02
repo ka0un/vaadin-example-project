@@ -15,6 +15,7 @@ import com.vaadin.flow.server.VaadinSession;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.springframework.core.io.Resource;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Base64;
 
@@ -40,15 +41,26 @@ public class ImageCropComponent extends Dialog {
         VerticalLayout layout = new VerticalLayout();
         layout.setAlignItems(FlexComponent.Alignment.CENTER);
 
+        if (imageResource == null) {
+            layout.add(new Span("Image source is unavailable, so cropping cannot continue."));
+            this.add(layout);
+            return;
+        }
+
         layout.add(new Span("Select a portion of the picture to crop: "));
 
-        StreamResource resource = new StreamResource("image.png", () -> {
-            try {
-                return imageResource.getInputStream();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        byte[] imageBytes;
+        try (var inputStream = imageResource.getInputStream()) {
+            imageBytes = inputStream.readAllBytes();
+        } catch (IOException e) {
+            Notification.show("Failed to load image for cropping.");
+            close();
+            return;
+        }
+
+        StreamResource resource = new StreamResource(
+                "image.png",
+                () -> new ByteArrayInputStream(imageBytes));
 
         String url = VaadinSession.getCurrent()
                 .getResourceRegistry()

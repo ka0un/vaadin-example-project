@@ -8,24 +8,34 @@ import com.example.notes.views.components.ImageCard;
 import com.example.notes.views.components.ImageDialog;
 import com.example.notes.views.layouts.MainLayout;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
+import com.vaadin.flow.component.upload.receivers.FileBuffer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import jakarta.annotation.security.PermitAll;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 @Route(value = "gallery", layout = MainLayout.class)
@@ -34,14 +44,18 @@ import java.util.List;
 @CssImport("./styles/sharedCss.css")
 public class GalleryView extends VerticalLayout {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(GalleryView.class);
+
     private final ImageService imageService;
     private final User currentUser;
-    List<ImageThumbnailDto> images;
+    private List<ImageThumbnailDto> images;
     private int currentIndex = -1;
     private String format = "all";
     private int sort = 0;
 
     private final Div galleryContainer = new Div();
+    private final HorizontalLayout toolbar = new HorizontalLayout();
+    private Registration resizeListenerRegistration;
 
     public GalleryView(ImageService imageService,
                        UserRepository userRepository,
@@ -103,10 +117,10 @@ public class GalleryView extends VerticalLayout {
         HorizontalLayout rightControls = new HorizontalLayout(formatFilter, sortBy);
         rightControls.setSpacing(true);
 
-        HorizontalLayout toolbar = new HorizontalLayout(addButton, rightControls);
+        toolbar.add(addButton, rightControls);
         toolbar.setWidthFull();
         toolbar.setAlignItems(Alignment.CENTER);
-        toolbar.expand(rightControls); // pushes controls to right
+        toolbar.expand(rightControls);
 
         toolbar.getStyle().set("flex-wrap", "wrap");
 
@@ -119,22 +133,43 @@ public class GalleryView extends VerticalLayout {
                 .set("justify-content", "flex-end")
                 .set("flex-grow", "1");
 
-        toolbar.getElement().executeJs("""
-        const toolbar = this;
-        function updateLayout() {
-            if (window.innerWidth < 600) {
-                toolbar.style.flexDirection = 'column';
-                toolbar.style.alignItems = 'stretch';
-            } else {
-                toolbar.style.flexDirection = 'row';
-                toolbar.style.alignItems = 'center';
-            }
-        }
-        updateLayout();
-        window.addEventListener('resize', updateLayout);
-    """);
-
         return toolbar;
+    }
+
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        super.onAttach(attachEvent);
+
+        removeResizeListener();
+
+        attachEvent.getUI().getPage().retrieveExtendedClientDetails(
+                details -> updateToolbarLayout(details.getWindowInnerWidth()));
+        resizeListenerRegistration = attachEvent.getUI().getPage()
+                .addBrowserWindowResizeListener(
+                        event -> updateToolbarLayout(event.getWidth()));
+    }
+
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        removeResizeListener();
+        super.onDetach(detachEvent);
+    }
+
+    private void removeResizeListener() {
+        if (resizeListenerRegistration != null) {
+            resizeListenerRegistration.remove();
+            resizeListenerRegistration = null;
+        }
+    }
+
+    private void updateToolbarLayout(int windowWidth) {
+        if (windowWidth < 600) {
+            toolbar.getStyle().set("flex-direction", "column");
+            toolbar.getStyle().set("align-items", "stretch");
+        } else {
+            toolbar.getStyle().set("flex-direction", "row");
+            toolbar.getStyle().set("align-items", "center");
+        }
     }
 
     private void openUploadDialog() {
@@ -150,7 +185,7 @@ public class GalleryView extends VerticalLayout {
 
     private Component createUploadSection(Dialog dialog) {
 
-        MemoryBuffer buffer = new MemoryBuffer();
+        FileBuffer buffer = new FileBuffer();
         Upload upload = new Upload(buffer);
 
         upload.setAcceptedFileTypes("image/png", "image/jpeg", "image/jpg");
@@ -161,10 +196,12 @@ public class GalleryView extends VerticalLayout {
         upload.setDropLabel(new Span("Drag & drop image here"));
 
         upload.addSucceededListener(event -> {
-            try {
+            File tempUpload = getTempUploadFile(buffer);
+
+            try (InputStream inputStream = buffer.getInputStream()) {
                 imageService.saveImage(
                         event.getFileName(),
-                        buffer.getInputStream(),
+                        inputStream,
                         event.getContentLength(),
                         currentUser
                 );
@@ -173,9 +210,21 @@ public class GalleryView extends VerticalLayout {
                 refreshGallery();
 
             } catch (Exception e) {
-                e.printStackTrace();
+                LOGGER.error("Failed to save uploaded image: {}", event.getFileName(), e);
+                showUploadError("Upload failed. The image could not be saved.");
+            } finally {
+                deleteTempUploadFile(tempUpload, event.getFileName());
             }
         });
+
+        upload.addFailedListener(event -> {
+            LOGGER.warn("Upload failed for file: {}", event.getFileName(), event.getReason());
+            deleteTempUploadFile(getTempUploadFile(buffer), event.getFileName());
+            showUploadError("Upload failed. Check your connection and try again.");
+        });
+
+        upload.addFileRejectedListener(
+                event -> showUploadError("Upload rejected: " + event.getErrorMessage()));
 
         Button uploadButton = new Button("Upload Image");
         upload.setUploadButton(uploadButton);
@@ -184,6 +233,33 @@ public class GalleryView extends VerticalLayout {
         upload.setHeightFull();
 
         return upload;
+    }
+
+    private File getTempUploadFile(FileBuffer buffer) {
+        if (buffer.getFileData() == null) {
+            return null;
+        }
+        return buffer.getFileData().getFile();
+    }
+
+    private void deleteTempUploadFile(File tempUpload, String fileName) {
+        if (tempUpload == null) {
+            return;
+        }
+
+        try {
+            java.nio.file.Files.deleteIfExists(tempUpload.toPath());
+        } catch (IOException exception) {
+            LOGGER.warn("Failed to delete temporary upload file for {}", fileName, exception);
+        }
+    }
+
+    private void showUploadError(String message) {
+        Notification notification = Notification.show(
+                message,
+                3000,
+                Notification.Position.TOP_CENTER);
+        notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
     }
 
     private Component createGallerySection() {
@@ -202,8 +278,10 @@ public class GalleryView extends VerticalLayout {
 
         images = imageService.getAllImagesByUser(format,sort);
 
-        for (ImageThumbnailDto img : images) {
-            galleryContainer.add(new ImageCard(img, () -> openImageDialog(images.indexOf(img))));
+        for (int i = 0; i < images.size(); i++) {
+            ImageThumbnailDto image = images.get(i);
+            int index = i;
+            galleryContainer.add(new ImageCard(image, () -> openImageDialog(index)));
         }
     }
 

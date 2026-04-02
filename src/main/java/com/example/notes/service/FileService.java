@@ -1,6 +1,8 @@
 package com.example.notes.service;
 
 import net.coobird.thumbnailator.Thumbnails;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -13,6 +15,8 @@ import java.util.List;
 
 @Service
 public class FileService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileService.class);
 
     public void saveFiles(byte[] imageBytes, File originalFile, File thumbFile) throws IOException {
 
@@ -43,10 +47,12 @@ public class FileService {
         return format;
     }
 
-    public void deleteFileIfExists(File file) {
+    public boolean deleteFileIfExists(File file) {
         try {
-            Files.deleteIfExists(file.toPath());
-        } catch (IOException ignored) {
+            return Files.deleteIfExists(file.toPath());
+        } catch (IOException exception) {
+            LOGGER.warn("Failed to delete file {}", file, exception);
+            return false;
         }
     }
 

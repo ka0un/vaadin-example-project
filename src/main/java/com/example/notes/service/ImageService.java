@@ -7,6 +7,9 @@ import com.example.notes.data.entity.User;
 import com.example.notes.data.repository.ImageRepository;
 import com.example.notes.data.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Sort;
@@ -36,17 +39,25 @@ public class ImageService {
 
     private final ImageRepository imageRepository;
     private final FileService fileService;
-
-    private final String uploadDir = "uploads/";
     private final UserRepository userRepository;
+    private final Path uploadDir;
+    private final ImageDbService imageDbService;
 
-    public ImageService(ImageRepository imageRepository, UserRepository userRepository,  FileService fileService) {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ImageService.class);
+
+    public ImageService(ImageRepository imageRepository,
+                        UserRepository userRepository,
+                        FileService fileService,
+                        @Value("${notes.upload-dir:uploads}") String uploadDir,
+                        ImageDbService imageDbService) {
         this.imageRepository = imageRepository;
         this.userRepository = userRepository;
         this.fileService = fileService;
+        this.imageDbService = imageDbService;
+        this.uploadDir = Path.of(uploadDir).normalize();
     }
 
-    public void saveImage(String fileName, InputStream inputStream, long fileSize, User user) throws IOException {
+    public void saveImage(String fileName, InputStream inputStream, long fileSize, User user) throws IllegalArgumentException, IOException {
 
         String format = fileService.extractAndValidateFormat(fileName);
 
@@ -54,7 +65,7 @@ public class ImageService {
 
         BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
         if (originalImage == null) {
-            throw new IllegalArgumentException("Invalid image file");
+            throw new IllegalArgumentException();
         }
 
         int width = originalImage.getWidth();
@@ -62,18 +73,15 @@ public class ImageService {
 
         Long id = generateSecureRandomId();
 
-        File directory = new File(uploadDir);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
+        ensureUploadDirectoryExists();
 
-        File originalFile = new File(uploadDir + id + "." + format);
-        File thumbFile = new File(uploadDir + id + "_thumb.jpg");
+        File originalFile = resolveUploadPath(id + "." + format).toFile();
+        File thumbFile = resolveUploadPath(id + "_thumb.jpg").toFile();
 
         try {
             fileService.saveFiles(imageBytes, originalFile, thumbFile);
 
-            saveImageToDatabase(id, fileName, fileSize, format, width, height, user);
+            imageDbService.saveImageToDatabase(id, fileName, fileSize, format, width, height, user);
 
         } catch (Exception e) {
             fileService.deleteFileIfExists(originalFile);
@@ -82,29 +90,7 @@ public class ImageService {
         }
     }
 
-    @Transactional
-    public void saveImageToDatabase(Long id,
-                                    String fileName,
-                                    long fileSize,
-                                    String format,
-                                    int width,
-                                    int height,
-                                    User user) {
-
-        Image image = new Image();
-        image.setId(id);
-        image.setFileName(fileName);
-        image.setFileSize(fileSize);
-        image.setFormat(format);
-        image.setWidth(width);
-        image.setHeight(height);
-        image.setUploadTime(LocalDateTime.now());
-        image.setUser(user);
-
-        imageRepository.save(image);
-    }
-
-    public void deleteImage(Long id, User user) throws IOException {
+    public void deleteImage(Long id, User user) throws EntityNotFoundException, AccessDeniedException {
 
         Image img = imageRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Image not found"));
@@ -113,32 +99,25 @@ public class ImageService {
             throw new AccessDeniedException("Access denied");
         }
 
-        deleteImageFromDatabase(img);
+        imageDbService.deleteImageFromDatabase(img);
 
-        fileService.deleteFileIfExists(Paths.get(uploadDir).resolve(String.valueOf(id)+"."+img.getFormat()).toFile());
-        fileService.deleteFileIfExists(Paths.get(uploadDir).resolve(String.valueOf(id)+"_thumb.jpg").toFile());
+        boolean originalDeleted = fileService.deleteFileIfExists(resolveUploadPath(id + "." + img.getFormat()).toFile());
 
+        boolean thumbDeleted = fileService.deleteFileIfExists(resolveUploadPath(id + "_thumb.jpg").toFile());
+
+        if (!originalDeleted || !thumbDeleted) {
+            LOGGER.warn("File deletion failed for image id: {}", id);
+        }
 
     }
 
-    @Transactional
-    protected void deleteImageFromDatabase(Image img) throws IOException {
-        imageRepository.delete(img);
-    }
-
-    public ImageDto getImageForUser(Long id) throws Exception {
+    public ImageDto getImageForUser(Long id) throws IOException {
 
         Image img = authorize(id);
 
-        Path path = Paths.get(uploadDir).resolve(id +"."+ img.getFormat());
+        Path path = resolveUploadPath(id +"."+ img.getFormat());
 
-        Resource resource = null;
-
-        if (Files.exists(path) && Files.isRegularFile(path)) {
-            try {
-                resource = new UrlResource(path.toUri());
-            } catch (MalformedURLException ignored) {}
-        }
+        Resource resource = createResourceIfPresent(path);
 
         return new ImageDto(img, resource);
     }
@@ -169,8 +148,7 @@ public class ImageService {
         List<ImageThumbnailDto> thumbnails = new ArrayList<>();
 
         for (Image img : images) {
-            Path thumbPath = Paths.get(uploadDir)
-                    .resolve(img.getId() + "_thumb.jpg");
+            Path thumbPath = resolveUploadPath(img.getId() + "_thumb.jpg");
 
             Resource resource = null;
 
@@ -200,24 +178,21 @@ public class ImageService {
 
         String format = existingImage.getFormat();
 
-        File directory = new File(uploadDir);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
+        ensureUploadDirectoryExists();
 
-        File oldOriginal = new File(uploadDir + imageId + "." + format);
-        File oldThumb = new File(uploadDir + imageId + "_thumb.jpg");
+        File oldOriginal = resolveUploadPath(imageId + "." + format).toFile();
+        File oldThumb = resolveUploadPath(imageId + "_thumb.jpg").toFile();
 
-        File newOriginal = new File(uploadDir + imageId + "_new." + format);
-        File newThumb = new File(uploadDir + imageId + "_thumb_new.jpg");
+        File newOriginal = resolveUploadPath(imageId + "_new." + format).toFile();
+        File newThumb = resolveUploadPath(imageId + "_thumb_new.jpg").toFile();
 
         try {
             fileService.saveFiles(imageBytes, newOriginal, newThumb);
 
-            updateImageMetadata(existingImage, width, height, imageBytes.length);
-
             fileService.moveFiles(newOriginal.toPath(), oldOriginal.toPath(), StandardCopyOption.REPLACE_EXISTING);
             fileService.moveFiles(newThumb.toPath(), oldThumb.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+            imageDbService.updateImageMetadata(existingImage, width, height, imageBytes.length);
 
         } catch (Exception e) {
 
@@ -227,18 +202,27 @@ public class ImageService {
         }
     }
 
-    @Transactional
-    public void updateImageMetadata(Image image, int width, int height, long fileSize) {
+    private static final SecureRandom random = new SecureRandom();
 
-        image.setWidth(width);
-        image.setHeight(height);
-        image.setFileSize(fileSize);
-        image.setUploadTime(LocalDateTime.now());
-
-        imageRepository.save(image);
+    private void ensureUploadDirectoryExists() throws IOException {
+        Files.createDirectories(uploadDir);
     }
 
-    private static final SecureRandom random = new SecureRandom();
+    private Path resolveUploadPath(String fileName) {
+        return uploadDir.resolve(fileName);
+    }
+
+    private Resource createResourceIfPresent(Path path) throws IOException {
+        if (!Files.exists(path) || !Files.isRegularFile(path)) {
+            return null;
+        }
+
+        try {
+            return new UrlResource(path.toUri());
+        } catch (MalformedURLException exception) {
+            throw new IOException("Failed to create resource for " + path, exception);
+        }
+    }
 
     private Long generateSecureRandomId() {
         long id;
